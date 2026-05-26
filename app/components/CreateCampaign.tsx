@@ -27,9 +27,9 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
   // Campaign list filtering states
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("ALL");
+  const [status, setStatus] = useState<string | number>("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(9);
   const [totalCount, setTotalCount] = useState(0);
 
   // Tailwind CSS themed design tokens
@@ -46,60 +46,88 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
   const mutedText = isDark ? "text-slate-400" : "text-slate-500";
 
   // Fetch campaign history list from API
-  const fetchCampaigns = async () => {
-    setListLoading(true);
-    setListError(null);
-    const token = getAccessToken();
+const fetchCampaigns = async () => {
+  setListLoading(true);
+  setListError(null);
 
-    const payload: any = {
-      page,
-      limit,
-      search,
-    };
+  const token = getAccessToken();
 
-    if (status !== "ALL") {
-      payload.status = status;
-    }
+  const payload: any = {
+    page,
+    limit,
+    search,
+  };
 
-    try {
-      const response = await fetch("http://localhost:5000/campaign/v1/getall", {
-        method: "POST",
+  if (status !== "") {
+    payload.status = status;
+  }
+
+  // Convert payload to query params
+  const queryParams = new URLSearchParams(
+    Object.entries(payload).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        acc[key] = String(value);
+      }
+      return acc;
+    }, {} as Record<string, string>)
+  ).toString();
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/campaign/v1/getall?${queryParams}`,
+      {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
+    );
 
-      const resData = await response.json();
-
-      let list: any[] = [];
-      let total = 0;
-
-      if (resData && resData.success) {
-        list = resData.data || [];
-        total = resData.pagination?.total ?? list.length;
-      } else if (resData && Array.isArray(resData)) {
-        list = resData;
-        total = resData.length;
-      } else if (resData) {
-        list = resData.data || resData.campaigns || resData.results || resData.list || [];
-        total = resData.pagination?.total || resData.total || resData.count || list.length;
-      }
-
-      setCampaigns(list);
-      setTotalCount(total);
-    } catch (err) {
-      console.error("Error fetching campaigns in CreateCampaign:", err);
-      setListError(err instanceof Error ? err.message : "Failed to load campaigns.");
-    } finally {
-      setListLoading(false);
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
     }
-  };
+
+    const resData = await response.json();
+
+    let list: any[] = [];
+    let total = 0;
+
+    if (resData && resData.success) {
+      list = resData.data || [];
+      total = resData.pagination?.total ?? list.length;
+    } else if (Array.isArray(resData)) {
+      list = resData;
+      total = resData.length;
+    } else if (resData) {
+      list =
+        resData.data ||
+        resData.campaigns ||
+        resData.results ||
+        resData.list ||
+        [];
+
+      total =
+        resData.pagination?.total ||
+        resData.total ||
+        resData.count ||
+        list.length;
+    }
+
+    setCampaigns(list);
+    setTotalCount(total);
+  } catch (err) {
+    console.error("Error fetching campaigns:", err);
+
+    setListError(
+      err instanceof Error
+        ? err.message
+        : "Failed to load campaigns."
+    );
+  } finally {
+    setListLoading(false);
+  }
+};
 
   // Trigger fetch when parameters or refreshKey changes
   useEffect(() => {
@@ -196,36 +224,7 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
 
   return (
     <div className="space-y-6">
-      {/* Metric stats cards */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <article className={`rounded-[2rem] p-6 shadow-lg transition-transform hover:scale-[1.01] ${cardStyle}`}>
-          <p className={`text-sm uppercase tracking-[0.24em] ${mutedText}`}>
-            Active campaigns
-          </p>
-          <p className="mt-4 text-4xl font-semibold">4</p>
-          <p className={`mt-2 text-sm ${mutedText}`}>
-            Live campaigns running across your audience.
-          </p>
-        </article>
-        <article className={`rounded-[2rem] p-6 shadow-lg transition-transform hover:scale-[1.01] ${cardStyle}`}>
-          <p className={`text-sm uppercase tracking-[0.24em] ${mutedText}`}>
-            Messages sent
-          </p>
-          <p className="mt-4 text-4xl font-semibold">3,940</p>
-          <p className={`mt-2 text-sm ${mutedText}`}>
-            Delivered messages from recent campaigns.
-          </p>
-        </article>
-        <article className={`rounded-[2rem] p-6 shadow-lg transition-transform hover:scale-[1.01] ${cardStyle}`}>
-          <p className={`text-sm uppercase tracking-[0.24em] ${mutedText}`}>
-            Templates ready
-          </p>
-          <p className="mt-4 text-4xl font-semibold">12</p>
-          <p className={`mt-2 text-sm ${mutedText}`}>
-            Reusable templates stored for quick messaging.
-          </p>
-        </article>
-      </section>
+
 
       {/* Campaign Details Activation Banner */}
       <section className={`rounded-[2rem] p-8 border flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-300 hover:border-sky-500/30 ${sectionStyle}`}>
@@ -237,7 +236,7 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
                 : "text-2xl font-bold text-slate-950 tracking-tight"
             }
           >
-            Launch a New Campaign 🚀
+            Launch a New Campaign
           </h2>
           <p className={`text-sm ${mutedText} max-w-md`}>
             Reach your subscribers instantly. Compose personalized WhatsApp messages, broadcast templates, and track delivery in real time.
@@ -261,7 +260,7 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
         </button>
       </section>
 
-      {/* Custom self-contained Campaigns List section */}
+      {/* Custom self-contained Campaigns Grid section */}
       <section className={`rounded-[2rem] p-6 border transition-all duration-300 ${sectionStyle}`}>
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -273,7 +272,7 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
                   : "text-xl font-bold text-slate-950 tracking-tight"
               }
             >
-              Recent Campaigns 📋
+              Recent Campaigns
             </h2>
             <p className={`mt-1 text-sm ${mutedText}`}>
               Manage and track the real-time status of all your launched WhatsApp broadcasts.
@@ -319,13 +318,14 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
                 isDark ? "border-slate-700 bg-slate-900 text-white" : "border-slate-300 bg-white text-slate-900"
               }`}
             >
-              <option value="ALL">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
+              <option value="">All Status</option>
+              <option value={1}>Active</option>
+              <option value={0}>Inactive</option>
             </select>
 
             {/* Refresh button */}
             <button
+              type="button"
               onClick={() => fetchCampaigns()}
               className={`rounded-xl border p-2 text-sm transition hover:scale-105 active:scale-95 cursor-pointer ${
                 isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-770 hover:text-slate-900"
@@ -339,14 +339,16 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
           </div>
         </div>
 
-        {/* Content body */}
-        <div className="min-w-full overflow-x-auto">
+        {/* Content body - Custom Grid Layout */}
+        <div className="mt-2">
           {listLoading ? (
-            <div className="space-y-3 py-4">
-              {[...Array(3)].map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
+              {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className={`h-16 w-full animate-pulse rounded-2xl ${isDark ? "bg-slate-950/40" : "bg-slate-200/30"}`}
+                  className={`h-48 w-full animate-pulse rounded-[2rem] ${
+                    isDark ? "bg-slate-950/45 border border-slate-800/50" : "bg-slate-200/35 border border-slate-200/50"
+                  }`}
                 />
               ))}
             </div>
@@ -374,82 +376,83 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
               </p>
             </div>
           ) : (
-            <table className="min-w-full border-separate border-spacing-y-3 text-left">
-              <thead>
-                <tr className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  <th className="px-4 py-2">Campaign name</th>
-                  <th className="px-4 py-2">Created By</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Created date</th>
-                  <th className="px-4 py-2 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaigns.map((campaign, index) => {
-                  const s = String(campaign.status).toUpperCase();
-                  let statusLabel = "Inactive";
-                  let statusClass = "bg-slate-500/20 text-slate-300 border border-slate-500/30";
-                  
-                  if (campaign.status === 1 || s === "ACTIVE" || s === "1" || campaign.status === true) {
-                    statusLabel = "Active";
-                    statusClass = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                  } else if (s === "PAUSED") {
-                    statusLabel = "Paused";
-                    statusClass = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
-                  }
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
+              {campaigns.map((campaign, index) => {
+                const s = String(campaign.status).toUpperCase();
+                let statusLabel = "Inactive";
+                let statusClass = "bg-slate-500/10 text-slate-400 border border-slate-500/20";
+                
+                if (campaign.status === 1 || s === "ACTIVE" || s === "1" || campaign.status === true) {
+                  statusLabel = "Active";
+                  statusClass = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                } else if (s === "PAUSED") {
+                  statusLabel = "Paused";
+                  statusClass = "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                }
 
-                  const formattedDate = campaign.createdAt 
-                    ? new Date(campaign.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "-";
+                const formattedDate = campaign.createdAt 
+                  ? new Date(campaign.createdAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : null;
 
-                  return (
-                    <tr
-                      key={campaign._id || campaign.id || index}
-                      className={`group rounded-3xl transition-all duration-200 ${
-                        isDark ? "bg-slate-950/80 hover:bg-slate-950 text-slate-200" : "bg-slate-100 hover:bg-slate-150 text-slate-800"
-                      }`}
-                    >
-                      <td className="px-4 py-4 rounded-l-3xl">
-                        <div>
-                          <p className={`font-semibold transition-colors duration-200 ${
-                            isDark ? "text-white group-hover:text-sky-400" : "text-slate-950 group-hover:text-sky-600"
-                          }`}>
-                            {campaign.title || "Untitled Campaign"}
-                          </p>
-                          {campaign.description && (
-                            <p className={`mt-1 text-xs max-w-sm truncate ${mutedText}`}>
-                              {campaign.description}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm font-medium">
-                        {campaign.createdBy || "System"}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold border ${statusClass}`}>
-                          {statusLabel}
-                        </span>
-                      </td>
-                      <td className={`px-4 py-4 text-xs font-medium ${mutedText}`}>
-                        {formattedDate}
-                      </td>
-                      <td className="px-4 py-4 rounded-r-3xl text-right">
-                        <button className="text-sm font-semibold text-sky-400 hover:text-sky-300 transition duration-200 active:scale-95 cursor-pointer">
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                return (
+                  <article
+                    key={campaign._id || campaign.id || index}
+                    className={`group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border p-6 transition-all duration-300 hover:-translate-y-1 ${
+                      isDark 
+                        ? "border-slate-800 bg-slate-950/40 text-slate-200 shadow-lg hover:shadow-sky-500/5 hover:border-sky-500/30" 
+                        : "border-slate-200 bg-slate-50/50 text-slate-800 shadow-md hover:shadow-lg hover:border-sky-400/50"
+                    }`}
+                  >
+                    {/* Top Row with Status Badges and Megaphone Icon */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`p-2.5 rounded-2xl ${
+                        isDark ? "bg-slate-900 text-sky-400" : "bg-white text-sky-600 shadow-sm border border-slate-100"
+                      }`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                        </svg>
+                      </div>
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold border ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="flex-1">
+                      <h3 className={`text-lg font-bold tracking-tight transition-colors duration-200 ${
+                        isDark ? "text-white group-hover:text-sky-400" : "text-slate-950 group-hover:text-sky-600"
+                      }`}>
+                        {campaign.title || "Untitled Campaign"}
+                      </h3>
+                      {campaign.description && (
+                        <p className={`mt-2 text-sm leading-relaxed line-clamp-3 ${mutedText}`}>
+                          {campaign.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Footer Row */}
+                    <div className={`mt-6 pt-4 border-t flex items-center justify-between text-xs ${
+                      isDark ? "border-slate-900" : "border-slate-200/60"
+                    }`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className={mutedText}>By:</span>
+                        <span className="font-semibold">{campaign.createdBy || "System"}</span>
+                      </div>
+                      {formattedDate && (
+                        <time className={`font-medium ${mutedText}`}>
+                          {formattedDate}
+                        </time>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           )}
         </div>
 

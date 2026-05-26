@@ -53,9 +53,6 @@ export default function DashboardClient() {
             {/* Header with Theme Toggle */}
             <div className="mb-8 flex items-start justify-between gap-8">
               <header>
-                <p className="text-xs uppercase tracking-[0.3em] text-sky-400/80">
-                  WhatsApp Dashboard
-                </p>
                 <h1
                   className={
                     "mt-3 text-4xl font-semibold " +
