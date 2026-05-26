@@ -48,7 +48,7 @@ export default function Home() {
         setSubmitted(true);
         setRedirecting(true);
         setAuthError(null);
-        // router.push("/dashboard");
+        router.replace("/dashboard");
         console.log("✓ Login successful");
         // console.log("• Access Token:", result.data.accessToken.substring(0, 20) + "...");
         // console.log("• Refresh Token:", result.data.refreshToken.substring(0, 20) + "...");
