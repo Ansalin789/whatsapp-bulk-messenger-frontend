@@ -8,6 +8,8 @@ export interface LoginResponse {
   refreshExp: number;
   username: string;
   email: string;
+  userId?: string;
+  id?: string;
 }
 
 export interface LoginResult {
@@ -76,6 +78,7 @@ const refreshExpiry =
     localStorage.setItem("refreshExp", refreshExpiry.toString());
     localStorage.setItem("username", data.username);
     localStorage.setItem("email", data.email);
+    localStorage.setItem("userId", data.userId || data.id || data.username);
 
     return {
       success: true,
@@ -101,6 +104,7 @@ export function logout() {
   localStorage.removeItem("refreshExp");
   localStorage.removeItem("username");
   localStorage.removeItem("email");
+  localStorage.removeItem("userId");
 }
 
 export function getAccessToken() {
@@ -110,6 +114,10 @@ export function getAccessToken() {
 export function isAuthenticated() {
   const token = localStorage.getItem("accessToken");
   return !!token;
+}
+
+export function getUserId() {
+  return localStorage.getItem("userId");
 }
 
 export function initializeAuth() {
