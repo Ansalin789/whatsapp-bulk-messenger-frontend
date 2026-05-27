@@ -1,3 +1,4 @@
+import { getAccessExp, getRefreshToken, setAccessExp, setAccessToken, setRefreshToken } from "@/utils/authStorage";
 import axios from "axios";
 
 let refreshTimeout: NodeJS.Timeout;
@@ -7,7 +8,7 @@ export const startRefreshTimer = (
 ) => {
   if (accessExp == null) {
     const storedExp =
-      localStorage.getItem("accessExp");
+      getAccessExp();
 
     console.log(
       "Stored Expiry:",
@@ -71,9 +72,7 @@ export const refreshAccessToken =
   async () => {
     try {
       const refreshToken =
-        localStorage.getItem(
-          "refreshToken"
-        );
+        getRefreshToken();
 
       if (!refreshToken) return;
 
@@ -87,20 +86,11 @@ export const refreshAccessToken =
 
       const data = response.data;
      
-      localStorage.setItem(
-        "accessToken",
-        data.accessToken
-      );
+      setAccessToken(data.accessToken);
 
-      localStorage.setItem(
-        "refreshToken",
-        data.refreshToken
-      );
+      setRefreshToken(data.refreshToken);
 
-      localStorage.setItem(
-        "accessExp",
-        data.accessExp.toString()
-      );
+      setAccessExp(data.accessExp);
 
       console.log(
         "Access token refreshed"

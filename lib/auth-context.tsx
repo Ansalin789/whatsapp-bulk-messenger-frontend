@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { login as authLogin, logout as authLogout, isAuthenticated as checkIsAuthenticated, initializeAuth, refreshAccessToken } from "./auth";
+import { login as authLogin, logout as authLogout, isAuthenticated as checkIsAuthenticated, initializeAuth } from "./auth";
 
 interface AuthContextType {
   isAuthenticated: boolean;

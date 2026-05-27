@@ -1,3 +1,19 @@
+import {
+  setAccessToken,
+  setRefreshToken,
+  getAccessToken as getToken,
+  getRefreshToken as getStoredRefreshToken,
+  logout as clearTokens,
+  setEmail,
+  setUsername,
+  setUserId,
+  setRefreshExp,
+  setAccessExp,
+  getUsername as getStoredUsername,
+  getUserId as getStoredUserId,
+
+} from "../utils/authStorage";
+
 const API_URL = "http://localhost:5000/auth/v1/login";
 
 export interface LoginResponse {
@@ -71,14 +87,19 @@ export async function login(
 const refreshExpiry =
   Math.floor(Date.now() / 1000) +
   data.refreshExp;
-    // Store tokens
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
-    localStorage.setItem("accessExp", accessExpiry.toString());
-    localStorage.setItem("refreshExp", refreshExpiry.toString());
-    localStorage.setItem("username", data.username);
-    localStorage.setItem("email", data.email);
-    localStorage.setItem("userId", data.userId || data.id || data.username);
+setAccessToken(data.accessToken);
+setRefreshToken(data.refreshToken);
+
+setAccessExp(accessExpiry);
+setRefreshExp(refreshExpiry);
+
+setUsername(data.username);
+setEmail(data.email);
+if (data.userId) {
+  setUserId(data.userId);
+} else if (data.id) {
+  setUserId(data.id);
+}
 
     return {
       success: true,
@@ -97,31 +118,82 @@ const refreshExpiry =
   }
 }
 
+export async function refreshAccessToken() {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) {
+    return { success: false, error: "No refresh token available" };
+  }
+
+  try {
+    const response = await fetch("http://localhost:5000/auth/v1/refresh", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        success: false,
+        error: errorText || `Unable to refresh token (${response.status})`,
+      };
+    }
+
+    const result = await response.json();
+    if (result.success && result.data?.accessToken) {
+      setAccessToken(result.data.accessToken);
+      if (result.data.refreshToken) {
+        setRefreshToken(result.data.refreshToken);
+      }
+      return {
+        success: true,
+        data: {
+          accessToken: result.data.accessToken,
+          refreshToken: result.data.refreshToken,
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: result.error || "Failed to refresh token",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Token refresh failed",
+    };
+  }
+}
+
 export function logout() {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("accessExp");
-  localStorage.removeItem("refreshExp");
-  localStorage.removeItem("username");
-  localStorage.removeItem("email");
-  localStorage.removeItem("userId");
+  clearTokens();
 }
 
 export function getAccessToken() {
-  return localStorage.getItem("accessToken");
+  return getToken();
 }
 
 export function isAuthenticated() {
-  const token = localStorage.getItem("accessToken");
+  const token = getToken();
   return !!token;
 }
 
 export function getUserId() {
-  return localStorage.getItem("userId");
+  return getStoredUserId();
 }
 
+export function getUsername() {
+  return getStoredUsername();
+}
+
+
+
 export function initializeAuth() {
-  const token = localStorage.getItem("accessToken");
+  const token = getToken();
+
   if (!token) {
     logout();
   }

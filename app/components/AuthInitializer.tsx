@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 import { startRefreshTimer } from "@/lib/token-manager";
+import { getAccessExp } from "@/utils/authStorage";
 
 export default function AuthInitializer() {
   useEffect(() => {
      const storedExp =
-      localStorage.getItem("accessExp");
+      getAccessExp();
       const accessExp = storedExp ? Number(storedExp) : null;
     startRefreshTimer(accessExp);
   }, []);
