@@ -32,6 +32,19 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
   const [limit] = useState(9);
   const [totalCount, setTotalCount] = useState(0);
 
+  // View Campaign Modal
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewError, setViewError] = useState("");
+
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [templateError, setTemplateError] = useState("");
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+
   // Tailwind CSS themed design tokens
   const sectionStyle = isDark
     ? "border-slate-800/70 bg-slate-900/80 shadow-2xl shadow-slate-950/20"
@@ -46,88 +59,88 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
   const mutedText = isDark ? "text-slate-400" : "text-slate-500";
 
   // Fetch campaign history list from API
-const fetchCampaigns = async () => {
-  setListLoading(true);
-  setListError(null);
+  const fetchCampaigns = async () => {
+    setListLoading(true);
+    setListError(null);
 
-  const token = getAccessToken();
+    const token = getAccessToken();
 
-  const payload: any = {
-    page,
-    limit,
-    search,
+    const payload: any = {
+      page,
+      limit,
+      search,
+    };
+
+    if (status !== "") {
+      payload.status = status;
+    }
+
+    // Convert payload to query params
+    const queryParams = new URLSearchParams(
+      Object.entries(payload).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          acc[key] = String(value);
+        }
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/campaign/v1/getall?${queryParams}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+      }
+
+      const resData = await response.json();
+
+      let list: any[] = [];
+      let total = 0;
+
+      if (resData && resData.success) {
+        list = resData.data || [];
+        total = resData.pagination?.total ?? list.length;
+      } else if (Array.isArray(resData)) {
+        list = resData;
+        total = resData.length;
+      } else if (resData) {
+        list =
+          resData.data ||
+          resData.campaigns ||
+          resData.results ||
+          resData.list ||
+          [];
+
+        total =
+          resData.pagination?.total ||
+          resData.total ||
+          resData.count ||
+          list.length;
+      }
+
+      setCampaigns(list);
+      setTotalCount(total);
+    } catch (err) {
+      console.error("Error fetching campaigns:", err);
+
+      setListError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load campaigns."
+      );
+    } finally {
+      setListLoading(false);
+    }
   };
-
-  if (status !== "") {
-    payload.status = status;
-  }
-
-  // Convert payload to query params
-  const queryParams = new URLSearchParams(
-    Object.entries(payload).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        acc[key] = String(value);
-      }
-      return acc;
-    }, {} as Record<string, string>)
-  ).toString();
-
-  try {
-    const response = await fetch(
-      `http://localhost:5000/campaign/v1/getall?${queryParams}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
-    }
-
-    const resData = await response.json();
-
-    let list: any[] = [];
-    let total = 0;
-
-    if (resData && resData.success) {
-      list = resData.data || [];
-      total = resData.pagination?.total ?? list.length;
-    } else if (Array.isArray(resData)) {
-      list = resData;
-      total = resData.length;
-    } else if (resData) {
-      list =
-        resData.data ||
-        resData.campaigns ||
-        resData.results ||
-        resData.list ||
-        [];
-
-      total =
-        resData.pagination?.total ||
-        resData.total ||
-        resData.count ||
-        list.length;
-    }
-
-    setCampaigns(list);
-    setTotalCount(total);
-  } catch (err) {
-    console.error("Error fetching campaigns:", err);
-
-    setListError(
-      err instanceof Error
-        ? err.message
-        : "Failed to load campaigns."
-    );
-  } finally {
-    setListLoading(false);
-  }
-};
 
   // Trigger fetch when parameters or refreshKey changes
   useEffect(() => {
@@ -219,6 +232,119 @@ const fetchCampaigns = async () => {
     }
   };
 
+  // // Fetch campaign by ID
+  // const handleViewCampaign = async (id: string) => {
+  //   setViewLoading(true);
+  //   setViewError("");
+  //   setViewModalOpen(true);
+
+  //   const token = getAccessToken();
+
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:5000/campaign/v1/${id}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to fetch campaign (${response.status})`
+  //       );
+  //     }
+
+  //     const data = await response.json();
+
+  //     setSelectedCampaign(data?.data || data);
+  //   } catch (error) {
+  //     console.error(error);
+
+  //     setViewError(
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Failed to load campaign details"
+  //     );
+  //   } finally {
+  //     setViewLoading(false);
+  //   }
+  // };
+
+  const handleViewCampaign = async (id: string) => {
+    setViewLoading(true);
+    setTemplateLoading(true);
+
+    setViewError("");
+    setTemplateError("");
+
+    setViewModalOpen(true);
+
+    const token = getAccessToken();
+
+    try {
+      // Campaign API
+      const campaignResponse = await fetch(
+        `http://localhost:5000/campaign/v1/${id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!campaignResponse.ok) {
+        throw new Error(
+          `Failed to fetch campaign (${campaignResponse.status})`
+        );
+      }
+
+      const campaignData = await campaignResponse.json();
+
+      setSelectedCampaign(campaignData?.data || campaignData);
+
+      // Templates API
+      const templateResponse = await fetch(
+        `http://localhost:5000/templates/v1/getall`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!templateResponse.ok) {
+        throw new Error(
+          `Failed to fetch templates (${templateResponse.status})`
+        );
+      }
+
+      const templateData = await templateResponse.json();
+
+      setTemplates(templateData?.data || []);
+    } catch (error) {
+      console.error(error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to load data";
+
+      setViewError(message);
+      setTemplateError(message);
+    } finally {
+      setViewLoading(false);
+      setTemplateLoading(false);
+    }
+  };
+
   // Form bounds
   const totalPages = Math.ceil(totalCount / limit) || 1;
 
@@ -294,11 +420,10 @@ const fetchCampaigns = async () => {
                 placeholder="Search..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className={`rounded-xl border pl-9 pr-4 py-2 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 ${
-                  isDark
-                    ? "border-slate-700 bg-slate-950/80 text-white placeholder-slate-500"
-                    : "border-slate-300 bg-white text-slate-900 placeholder-slate-400"
-                }`}
+                className={`rounded-xl border pl-9 pr-4 py-2 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 ${isDark
+                  ? "border-slate-700 bg-slate-950/80 text-white placeholder-slate-500"
+                  : "border-slate-300 bg-white text-slate-900 placeholder-slate-400"
+                  }`}
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
@@ -314,9 +439,8 @@ const fetchCampaigns = async () => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className={`rounded-xl border px-3 py-2 text-sm outline-none transition cursor-pointer focus:border-sky-400 ${
-                isDark ? "border-slate-700 bg-slate-900 text-white" : "border-slate-300 bg-white text-slate-900"
-              }`}
+              className={`rounded-xl border px-3 py-2 text-sm outline-none transition cursor-pointer focus:border-sky-400 ${isDark ? "border-slate-700 bg-slate-900 text-white" : "border-slate-300 bg-white text-slate-900"
+                }`}
             >
               <option value="">All Status</option>
               <option value={1}>Active</option>
@@ -327,9 +451,8 @@ const fetchCampaigns = async () => {
             <button
               type="button"
               onClick={() => fetchCampaigns()}
-              className={`rounded-xl border p-2 text-sm transition hover:scale-105 active:scale-95 cursor-pointer ${
-                isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-770 hover:text-slate-900"
-              }`}
+              className={`rounded-xl border p-2 text-sm transition hover:scale-105 active:scale-95 cursor-pointer ${isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-770 hover:text-slate-900"
+                }`}
               title="Refresh list"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={`w-4 h-4 ${listLoading ? 'animate-spin' : ''}`}>
@@ -346,9 +469,8 @@ const fetchCampaigns = async () => {
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className={`h-48 w-full animate-pulse rounded-[2rem] ${
-                    isDark ? "bg-slate-950/45 border border-slate-800/50" : "bg-slate-200/35 border border-slate-200/50"
-                  }`}
+                  className={`h-48 w-full animate-pulse rounded-[2rem] ${isDark ? "bg-slate-950/45 border border-slate-800/50" : "bg-slate-200/35 border border-slate-200/50"
+                    }`}
                 />
               ))}
             </div>
@@ -381,7 +503,7 @@ const fetchCampaigns = async () => {
                 const s = String(campaign.status).toUpperCase();
                 let statusLabel = "Inactive";
                 let statusClass = "bg-slate-500/10 text-slate-400 border border-slate-500/20";
-                
+
                 if (campaign.status === 1 || s === "ACTIVE" || s === "1" || campaign.status === true) {
                   statusLabel = "Active";
                   statusClass = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
@@ -390,28 +512,26 @@ const fetchCampaigns = async () => {
                   statusClass = "bg-amber-500/10 text-amber-400 border border-amber-500/20";
                 }
 
-                const formattedDate = campaign.createdAt 
+                const formattedDate = campaign.createdAt
                   ? new Date(campaign.createdAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
                   : null;
 
                 return (
                   <article
                     key={campaign._id || campaign.id || index}
-                    className={`group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border p-6 transition-all duration-300 hover:-translate-y-1 ${
-                      isDark 
-                        ? "border-slate-800 bg-slate-950/40 text-slate-200 shadow-lg hover:shadow-sky-500/5 hover:border-sky-500/30" 
-                        : "border-slate-200 bg-slate-50/50 text-slate-800 shadow-md hover:shadow-lg hover:border-sky-400/50"
-                    }`}
+                    className={`group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border p-6 transition-all duration-300 hover:-translate-y-1 ${isDark
+                      ? "border-slate-800 bg-slate-950/40 text-slate-200 shadow-lg hover:shadow-sky-500/5 hover:border-sky-500/30"
+                      : "border-slate-200 bg-slate-50/50 text-slate-800 shadow-md hover:shadow-lg hover:border-sky-400/50"
+                      }`}
                   >
                     {/* Top Row with Status Badges and Megaphone Icon */}
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`p-2.5 rounded-2xl ${
-                        isDark ? "bg-slate-900 text-sky-400" : "bg-white text-sky-600 shadow-sm border border-slate-100"
-                      }`}>
+                      <div className={`p-2.5 rounded-2xl ${isDark ? "bg-slate-900 text-sky-400" : "bg-white text-sky-600 shadow-sm border border-slate-100"
+                        }`}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                         </svg>
@@ -422,23 +542,36 @@ const fetchCampaigns = async () => {
                     </div>
 
                     {/* Content Section */}
-                    <div className="flex-1">
-                      <h3 className={`text-lg font-bold tracking-tight transition-colors duration-200 ${
-                        isDark ? "text-white group-hover:text-sky-400" : "text-slate-950 group-hover:text-sky-600"
-                      }`}>
-                        {campaign.title || "Untitled Campaign"}
-                      </h3>
-                      {campaign.description && (
-                        <p className={`mt-2 text-sm leading-relaxed line-clamp-3 ${mutedText}`}>
-                          {campaign.description}
-                        </p>
-                      )}
+                    <div className="justify-between flex">
+                      <div className="flex-1">
+                        <h3 className={`text-lg font-bold tracking-tight transition-colors duration-200 ${isDark ? "text-white group-hover:text-sky-400" : "text-slate-950 group-hover:text-sky-600"
+                          }`}>
+                          {campaign.title || "Untitled Campaign"}
+                        </h3>
+                        {campaign.description && (
+                          <p className={`mt-2 text-sm leading-relaxed line-clamp-3 ${mutedText}`}>
+                            {campaign.description}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        {/* Action Buttons */}
+                        <div className="mt-5 flex items-center gap-3">
+                          <button
+                            onClick={() =>
+                              handleViewCampaign(campaign._id || campaign.id)
+                            }
+                            className="rounded-xl cursor-pointer bg-sky-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-sky-400 active:scale-95"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Footer Row */}
-                    <div className={`mt-6 pt-4 border-t flex items-center justify-between text-xs ${
-                      isDark ? "border-slate-900" : "border-slate-200/60"
-                    }`}>
+                    <div className={`mt-6 pt-4 border-t flex items-center justify-between text-xs ${isDark ? "border-slate-900" : "border-slate-200/60"
+                      }`}>
                       <div className="flex items-center gap-1.5">
                         <span className={mutedText}>By:</span>
                         <span className="font-semibold">{campaign.createdBy || "System"}</span>
@@ -458,9 +591,8 @@ const fetchCampaigns = async () => {
 
         {/* Pagination */}
         {!listLoading && !listError && totalCount > 0 && (
-          <div className={`mt-4 border-t pt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${
-            isDark ? "border-slate-800" : "border-slate-200"
-          }`}>
+          <div className={`mt-4 border-t pt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${isDark ? "border-slate-800" : "border-slate-200"
+            }`}>
             <p className={`text-xs ${mutedText}`}>
               Showing <span className="font-semibold text-sky-500">{(page - 1) * limit + 1}</span> to{" "}
               <span className="font-semibold text-sky-500">{Math.min(page * limit, totalCount)}</span> of{" "}
@@ -470,18 +602,16 @@ const fetchCampaigns = async () => {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold border transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${
-                  isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-750 hover:bg-slate-50"
-                }`}
+                className={`rounded-xl px-4 py-2 text-xs font-semibold border transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-750 hover:bg-slate-50"
+                  }`}
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold border transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${
-                  isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-750 hover:bg-slate-50"
-                }`}
+                className={`rounded-xl px-4 py-2 text-xs font-semibold border transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${isDark ? "border-slate-700 bg-slate-900 text-slate-300 hover:text-white" : "border-slate-300 bg-white text-slate-750 hover:bg-slate-50"
+                  }`}
               >
                 Next
               </button>
@@ -627,6 +757,365 @@ const fetchCampaigns = async () => {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+
+      {/* View Campaign Modal */}
+      {viewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setViewModalOpen(false);
+              setSelectedCampaign(null);
+            }}
+          />
+
+          {/* Modal */}
+          <div
+            className={`relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2rem] border p-8 ${isDark
+              ? "border-slate-800 bg-slate-900 text-white"
+              : "border-slate-200 bg-white text-slate-900"
+              }`}
+          >
+            {/* Close */}
+            <button
+              onClick={() => {
+                setViewModalOpen(false);
+                setSelectedCampaign(null);
+              }}
+              className={`absolute right-5 top-5 rounded-full p-2 transition ${isDark
+                ? "hover:bg-slate-800"
+                : "hover:bg-slate-100"
+                }`}
+            >
+              ✕
+            </button>
+
+            {/* Loading */}
+            {viewLoading ? (
+              <div className="py-10 text-center">
+                <p className={mutedText}>
+                  Loading campaign...
+                </p>
+              </div>
+            ) : viewError ? (
+              <div className="py-10 text-center">
+                <p className="text-red-400">
+                  {viewError}
+                </p>
+              </div>
+            ) : selectedCampaign ? (
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold">
+                      Select Template
+                    </h3>
+
+                    <p
+                      className={`mt-1 text-sm ${isDark
+                        ? "text-slate-400"
+                        : "text-slate-500"
+                        }`}
+                    >
+                      Choose a WhatsApp template for this
+                      campaign
+                    </p>
+                  </div>
+
+                  <div
+                    className={`rounded-full px-4 py-2 text-sm font-semibold ${isDark
+                      ? "bg-slate-800 text-slate-300"
+                      : "bg-slate-100 text-slate-700"
+                      }`}
+                  >
+                    {templates.length} Templates
+                  </div>
+                </div>
+
+                {/* Grid */}
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-3" >
+                  {templates.map((template, index) => (
+                    <div
+                      key={template.id || index}
+                      className={`group relative overflow-hidden rounded-[1rem] border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark
+                        ? "border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 hover:border-sky-500/40"
+                        : "border-slate-200 bg-gradient-to-br from-white to-slate-50 hover:border-sky-300"
+                        }`}
+                    onClick={() => {
+                            setSelectedTemplate(template);
+                          }}>
+                      {/* Top Glow */}
+                      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-sky-500/10 blur-3xl" />
+
+                      <div className="flex flex-row justify-center gap-6">
+                        {/* Icon */}
+                        {/* <div
+                          className={`mb-5 flex h-6 w-6 items-center justify-center rounded-md ${isDark
+                            ? "bg-slate-800 text-sky-400"
+                            : "bg-sky-50 text-sky-600"
+                            }`}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="h-5 w-5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M7.5 8.25h9m-9 3h6m-7.5 8.25h12A2.25 2.25 0 0020.25 17V7A2.25 2.25 0 0018 4.75H6A2.25 2.25 0 003.75 7v10A2.25 2.25 0 006 19.25z"
+                            />
+                          </svg>
+                        </div> */}
+
+                        {/* Template Name */}
+                        <h3 className="text-sm font-semibold tracking-tight">
+                          {template.name}
+                        </h3>
+                      </div>
+
+                      {/* Tags */}
+                      <div className="mt-5 flex flex-wrap items-center gap-2">
+                        <span className="rounded-sm bg-sky-500/10 px-3 py-1 text-[7px] font-medium text-sky-400">
+                          {template.category}
+                        </span>
+
+                        <span
+                          className={`rounded-sm px-3 py-1 text-[7px] font-medium ${template.status === "APPROVED"
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : template.status === "PENDING"
+                              ? "bg-amber-500/10 text-amber-400"
+                              : "bg-red-500/10 text-red-400"
+                            }`}
+                        >
+                          {template.status}
+                        </span>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="mt-6 flex items-center justify-between">
+                        {/* Preview */}
+                        <button
+                          onClick={() => {
+                            setSelectedTemplate(template);
+                            setPreviewOpen(true);
+                          }}
+                          className={`rounded-md border cursor-pointer px-3 py-1 text-xs font-semibold transition ${isDark
+                            ? "border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                            }`}
+                        >
+                          Preview
+                        </button>
+
+                        {/* Select */}
+                        <button
+  onClick={(e) => {
+    e.stopPropagation();
+    setSelectedTemplate(template);
+  }}
+  className={` rounded-md px-3 py-1 text-xs cursor-pointer font-semibold text-white transition-all duration-300 ${
+    selectedTemplate?.id === template.id
+      ? "bg-emerald-500 hover:scale-105 shadow-lg shadow-emerald-500/20"
+      : "bg-gradient-to-r from-sky-500 to-indigo-500 hover:scale-105 hover:brightness-110"
+  }`}
+>
+  {selectedTemplate?.id === template.id
+    ? "Selected ✓"
+    : "Select"}
+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bottom Next Step */}
+                <div
+                  className={`sticky bottom-0 flex items-center justify-between rounded-2xl border p-5 backdrop-blur-xl ${isDark
+                    ? "border-slate-700 bg-slate-900/80"
+                    : "border-slate-200 bg-white/80"
+                    }`}
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {selectedTemplate
+                        ? selectedTemplate.name
+                        : "No template selected"}
+                    </p>
+
+                    <p
+                      className={`text-sm ${isDark
+                        ? "text-slate-400"
+                        : "text-slate-500"
+                        }`}
+                    >
+                      Continue to next step after selecting
+                      template
+                    </p>
+                  </div>
+
+                  <button
+                    disabled={!selectedTemplate}
+                    className="rounded-2xl cursor-pointer bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next Step →
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Template Preview Modal */}
+      {previewOpen && selectedTemplate && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setPreviewOpen(false);
+              setSelectedTemplate(null);
+            }}
+          />
+
+          {/* Preview Card */}
+          <div
+            className={`relative z-10 w-full max-w-2xl rounded-[2rem] overflow-hidden border ${isDark
+              ? "border-slate-700 bg-[#0b141a]"
+              : "border-slate-200 bg-[#efeae2]"
+              }`}
+          >
+            {/* Close */}
+            <button
+              onClick={() => {
+                setPreviewOpen(false);
+                setSelectedTemplate(null);
+              }}
+              className="absolute right-5 top-5 z-20 rounded-full bg-black/20 px-3 py-1 text-white"
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div
+              className={`px-5 py-4 border-b ${isDark
+                ? "border-slate-700 bg-[#202c33]"
+                : "border-slate-200 bg-[#f0f2f5]"
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
+                  W
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">
+                    {selectedTemplate.name}
+                  </h3>
+
+                  <p className="text-xs text-slate-400">
+                    WhatsApp Template Preview
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Area */}
+            <div className="p-6">
+              <div
+                className={`rounded-2xl px-5 py-4 shadow-sm ${isDark
+                  ? "bg-[#202c33] text-slate-100"
+                  : "bg-white text-slate-800"
+                  }`}
+              >
+                {selectedTemplate.components?.map(
+                  (component: any, idx: number) => {
+                    let formattedText =
+                      component.text || "";
+
+                    const bodyExample =
+                      selectedTemplate.components?.find(
+                        (c: any) =>
+                          c.type === "BODY"
+                      )?.example?.body_text?.[0] || [];
+
+                    // Replace variables dynamically
+                    formattedText = formattedText.replace(
+                      /{{(\d+)}}/g,
+                      (_match: string, index: string) => {
+                        return (
+                          bodyExample[Number(index) - 1] ||
+                          `{{${index}}}`
+                        );
+                      }
+                    );
+
+                    return (
+                      <div key={idx}>
+                        {/* HEADER */}
+                        {component.type === "HEADER" && (
+                          <h2 className="font-bold text-2xl mb-4">
+                            {formattedText}
+                          </h2>
+                        )}
+
+                        {/* BODY */}
+                        {component.type === "BODY" && (
+                          <p className="text-base leading-relaxed whitespace-pre-wrap">
+                            {formattedText}
+                          </p>
+                        )}
+
+                        {/* FOOTER */}
+                        {component.type === "FOOTER" && (
+                          <p className="mt-5 text-sm text-slate-400">
+                            {formattedText}
+                          </p>
+                        )}
+
+                        {/* BUTTONS */}
+                        {component.type === "BUTTONS" &&
+                          component.buttons && (
+                            <div className="mt-6 flex flex-col gap-3">
+                              {component.buttons.map(
+                                (
+                                  btn: any,
+                                  btnIdx: number
+                                ) => (
+                                  <button
+                                    key={btnIdx}
+                                    className={`rounded-2xl border py-3 text-base font-medium ${isDark
+                                      ? "border-slate-600 bg-slate-800 text-sky-400"
+                                      : "border-slate-200 bg-slate-50 text-sky-600"
+                                      }`}
+                                  >
+                                    {btn.text}
+                                  </button>
+                                )
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    );
+                  }
+                )}
+
+                {/* Time */}
+                <div className="mt-4 text-right text-xs text-slate-400">
+                  10:42 AM
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
