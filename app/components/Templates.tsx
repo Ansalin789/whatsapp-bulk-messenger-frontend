@@ -75,6 +75,11 @@ interface TemplatesProps {
 }
 
 export function Templates({ isDark }: TemplatesProps) {
+
+  const [viewOpen, setViewOpen] = useState(false);
+
+const [selectedTemplate, setSelectedTemplate] =
+  useState<any>(null);
   const [open, setOpen] = useState(false);
 
   const [tenantId, setTenantId] = useState("");
@@ -535,8 +540,8 @@ useEffect(() => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {listLoading ? (
+<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {listLoading ? (
             <div className="col-span-full rounded-2xl border p-6 text-center text-sm opacity-70">
               Loading templates...
             </div>
@@ -549,39 +554,313 @@ useEffect(() => {
               No saved templates yet. Click "Create Template" to add one.
             </div>
           ) : (
-            templates.map((template) => (
-              <div
-                key={template.name || template.title}
-                className={`border rounded-2xl p-5 ${sectionStyle}`}
-              >
-                <h3 className="font-bold text-lg">
-                  {template.name || template.title}
-                </h3>
+           templates.map((template) => {
+  const bodyComponent =
+    template.components?.find(
+      (c: any) => c.type === "BODY"
+    );
 
-                {template.category && (
-                  <p className="mt-2 text-xs uppercase opacity-70">
-                    Category: {template.category}
-                  </p>
-                )}
+  const headerComponent =
+    template.components?.find(
+      (c: any) => c.type === "HEADER"
+    );
 
-                <p className="mt-2 text-sm opacity-70">
-                  {template.description ||
-                    template.footer ||
-                    "WhatsApp message template"}
-                </p>
+  const footerComponent =
+    template.components?.find(
+      (c: any) => c.type === "FOOTER"
+    );
 
-                <div className="flex gap-3 mt-4">
-                  <button className="bg-sky-500 text-white px-4 py-2 rounded-lg">
-                    Use
-                  </button>
+  return (
+    <div
+      key={template.name}
+      className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+        isDark
+          ? "bg-slate-900 border-slate-700"
+          : "bg-white border-slate-200"
+      }`}
+    >
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-cyan-400" />
 
-                  <button className="border px-4 py-2 rounded-lg">Edit</button>
-                </div>
-              </div>
-            ))
+      <div className="p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-bold text-xl">
+              {template.name}
+            </h3>
+
+            <div className="flex gap-2 mt-3">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
+                {template.category}
+              </span>
+
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                {template.language}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl bg-slate-50 p-4 border">
+          {headerComponent?.text && (
+            <h4 className="font-semibold text-sm">
+              {headerComponent.text}
+            </h4>
+          )}
+
+          <p className="mt-3 text-sm text-slate-600 line-clamp-3">
+            {bodyComponent?.text}
+          </p>
+
+          {footerComponent?.text && (
+            <p className="mt-3 text-xs text-slate-400">
+              {footerComponent.text}
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              setSelectedTemplate(template);
+              setViewOpen(true);
+            }}
+            className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold"
+          >
+            View
+          </button>
+
+        
+          
+        </div>
+      </div>
+    </div>
+  );
+})
           )}
         </div>
       </section>
+
+
+{viewOpen && selectedTemplate && (
+  <div className="fixed inset-0 bg-black/60 z-[100] flex justify-center items-center p-5">
+
+    <div className="relative w-full max-w-md">
+
+      <button
+        onClick={() => setViewOpen(false)}
+        className="absolute -top-5 right-0 text-white text-3xl"
+      >
+        ×
+      </button>  
+
+      <div className="p-3 shadow-2xl">
+
+        <div className="bg-[#e5ddd5] rounded-[32px] p-4 min-h-[550px] relative overflow-hidden">
+
+          <div className="absolute inset-0 opacity-5 bg-[url('https://i.imgur.com/7yUvePI.png')]" />
+
+        <div className="relative z-10">
+
+  {/* WHATSAPP TOP HEADER */}
+
+ <div className="flex items-center justify-between bg-[#f0f2f5] px-4 py-3 border-b border-[#d1d7db] -mx-4 -mt-4 mb-4 rounded-t-[28px]">
+
+  {/* LEFT */}
+
+  <div className="flex items-center gap-3">
+
+    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-300">
+
+      <img
+        src="https://i.pravatar.cc/100"
+        alt="profile"
+        className="w-full h-full object-cover"
+      />
+    </div>
+
+    <div>
+      <h3 className="text-[15px] font-medium text-[#111b21]">
+        {selectedTemplate.createdBy || "Unknown User"}
+      </h3>
+
+      <p className="text-[12px] text-[#667781]">
+        online
+      </p>
+    </div>
+  </div>
+
+  {/* RIGHT ICONS */}
+
+  <div className="flex items-center gap-5 text-[#54656f]">
+
+    {/* VIDEO */}
+
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"
+      />
+      <rect
+        width="12"
+        height="10"
+        x="3"
+        y="7"
+        rx="2"
+      />
+    </svg>
+
+    {/* SEARCH */}
+
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+
+    {/* MENU */}
+
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-5 h-5"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
+    </svg>
+  </div>
+</div>
+
+  {/* MESSAGE */}
+
+  <div className="flex items-start gap-2">
+
+<div className="max-w-[72%] bg-white rounded-[8px] rounded-tl-none px-3 py-2 shadow-sm relative">
+    {/* HEADER */}
+
+    {selectedTemplate.components?.find(
+      (c: any) => c.type === "HEADER"
+    )?.text && (
+      <h2 className="font-semibold text-[15px] text-[#111b21] mb-2">
+        {
+          selectedTemplate.components.find(
+            (c: any) => c.type === "HEADER"
+          )?.text
+        }
+      </h2>
+    )}
+
+    {/* BODY */}
+
+<div className="text-[14px] leading-6 text-[#111b21] whitespace-pre-line break-words">
+
+  {(
+    selectedTemplate.components.find(
+      (c: any) => c.type === "BODY"
+    )?.text || ""
+  )
+    .split(/(\{\{\d+\}\})/g)
+    .map((part: string, index: number) => {
+
+      const match =
+        part.match(/\{\{(\d+)\}\}/);
+
+      if (match) {
+
+        const variableNumber =
+          match[1];
+
+        const variableName =
+          selectedTemplate.variables?.[
+            Number(variableNumber) - 1
+          ];
+
+        return (
+          <button
+            key={index}
+            className="inline-flex items-center gap-1 bg-[#e7f3ff] text-[#027eb5] px-2 py-[2px] rounded-md text-[12px] font-medium mx-[2px] hover:bg-[#d8ecff] transition"
+          >
+            {previewValues[variableNumber] ||
+              variableName ||
+              `{{${variableNumber}}}`}
+          </button>
+        );
+      }
+
+      return (
+        <span key={index}>
+          {part}
+        </span>
+      );
+    })}
+</div>
+
+    {/* FOOTER */}
+
+    {selectedTemplate.components?.find(
+      (c: any) => c.type === "FOOTER"
+    )?.text && (
+      <p className="text-[12px] text-[#667781] mt-3">
+        {
+          selectedTemplate.components.find(
+            (c: any) => c.type === "FOOTER"
+          )?.text
+        }
+      </p>
+    )}
+
+    {/* BUTTONS */}
+
+    <div className="mt-4 border-t border-[#e9edef] pt-2 space-y-2">
+      {selectedTemplate.components
+        ?.find(
+          (c: any) => c.type === "BUTTONS"
+        )
+        ?.buttons?.map(
+          (btn: any, index: number) => (
+            <button
+              key={index}
+              className="w-full text-center text-[#00a884] text-[14px] font-medium py-2 hover:bg-[#f5f6f6] rounded-lg transition"
+            >
+              {btn.text}
+            </button>
+          )
+        )}
+    </div>
+
+    {/* TIME */}
+
+    <div className="flex justify-end items-center mt-1">
+      <span className="text-[11px] text-[#667781]">
+        12:45 PM
+      </span>
+    </div>
+
+    {/* MESSAGE TAIL */}
+
+    <div className="absolute top-0 -left-2 w-3 h-3 bg-white clip-tail" />
+  </div>
+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* POPUP */}
 
