@@ -20,6 +20,27 @@ export function CampaignHistory({
   const [campaignError, setCampaignError] =
     useState<string | null>(null);
 
+  
+const [search, setSearch] =
+  useState("");
+
+const [statusFilter, setStatusFilter] =
+  useState("ALL");
+
+const [runTypeFilter, setRunTypeFilter] =
+  useState("ALL");
+
+const [
+  campaignPagination,
+  setCampaignPagination,
+] = useState({
+  total: 0,
+  page: 1,
+  limit: 6,
+  totalPages: 1,
+});
+
+  
   const sectionStyle = isDark
     ? "border-slate-800/70 bg-slate-900/80 shadow-2xl shadow-slate-950/20"
     : "border-slate-200/70 bg-white/90 shadow-xl shadow-slate-900/10";
@@ -42,8 +63,8 @@ export function CampaignHistory({
       const token = getAccessToken();
 
       const response = await fetch(
-        "http://localhost:5000/campaignrun/v1/getall",
-        {
+`http://localhost:5000/campaignrun/v1/getall?page=${campaignPagination.page}&limit=${campaignPagination.limit}`
+   ,     {
           method: "GET",
           headers: {
             "Content-Type":
@@ -66,6 +87,23 @@ export function CampaignHistory({
       const result = await response.json();
 
       setCampaignRuns(result.data || []);
+    
+setCampaignPagination((prev) => ({
+  ...prev,
+
+  total:
+    result.pagination?.total || 0,
+
+  page:
+    result.pagination?.page || 1,
+
+  limit:
+    result.pagination?.limit || 6,
+
+  totalPages:
+    result.pagination?.totalPages || 1,
+}));
+
     } catch (error) {
       console.error(error);
 
@@ -79,9 +117,45 @@ export function CampaignHistory({
     }
   };
 
-  useEffect(() => {
-    fetchCampaignRuns();
-  }, []);
+useEffect(() => {
+  fetchCampaignRuns();
+}, [campaignPagination.page]);
+
+const filteredCampaigns =
+  campaignRuns.filter(
+    (campaign) => {
+
+      const matchesSearch =
+        campaign.campaignId
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
+        campaign.templateId
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          );
+
+      const matchesStatus =
+        statusFilter === "ALL"
+          ? true
+          : campaign.status ===
+            statusFilter;
+
+      const matchesRunType =
+        runTypeFilter === "ALL"
+          ? true
+          : campaign.runType ===
+            runTypeFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesRunType
+      );
+    }
+  );
 
   return (
     <div className="space-y-6">
@@ -201,6 +275,93 @@ export function CampaignHistory({
         <div className="min-w-full overflow-x-auto px-6 py-5">
 
         
+<div className="flex flex-col xl:flex-row gap-4 mb-6">
+
+  {/* SEARCH */}
+
+  <div className="flex-1">
+
+    <input
+      type="text"
+      placeholder="Search campaigns..."
+      value={search}
+      onChange={(e) =>
+        setSearch(
+          e.target.value
+        )
+      }
+      className={`w-full rounded-2xl border px-5 py-3 text-sm outline-none ${
+        isDark
+          ? "bg-slate-900 border-slate-700 text-white"
+          : "bg-white border-slate-200 text-black"
+      }`}
+    />
+  </div>
+
+  {/* STATUS */}
+
+  <select
+    value={statusFilter}
+    onChange={(e) =>
+      setStatusFilter(
+        e.target.value
+      )
+    }
+    className={`rounded-2xl border px-5 py-3 text-sm ${
+      isDark
+        ? "bg-slate-900 border-slate-700 text-white"
+        : "bg-white border-slate-200 text-black"
+    }`}
+  >
+    <option value="ALL">
+      All Status
+    </option>
+
+    <option value="RUNNING">
+      Running
+    </option>
+
+    <option value="COMPLETED">
+      Completed
+    </option>
+
+    <option value="DRAFT">
+      Draft
+    </option>
+  </select>
+
+  {/* RUN TYPE */}
+
+  <select
+    value={runTypeFilter}
+    onChange={(e) =>
+      setRunTypeFilter(
+        e.target.value
+      )
+    }
+    className={`rounded-2xl border px-5 py-3 text-sm ${
+      isDark
+        ? "bg-slate-900 border-slate-700 text-white"
+        : "bg-white border-slate-200 text-black"
+    }`}
+  >
+    <option value="ALL">
+      All Run Types
+    </option>
+
+    <option value="INSTANT">
+      Instant
+    </option>
+
+    <option value="SCHEDULED">
+      Scheduled
+    </option>
+
+    <option value="DRAFT">
+      Draft
+    </option>
+  </select>
+</div>
 
 
 <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
@@ -225,7 +386,7 @@ export function CampaignHistory({
 
   ) : (
 
-    campaignRuns.map((campaign) => (
+filteredCampaigns.map((campaign) => (
 
       <div
         key={campaign.id}
@@ -426,9 +587,7 @@ export function CampaignHistory({
 
         {/* BUTTON */}
 
-        <button className="mt-6 w-full rounded-2xl bg-sky-500 py-3 text-sm font-semibold text-white transition hover:bg-sky-600">
-          View Campaign
-        </button>
+      
       </div>
     ))
   )}
@@ -438,6 +597,133 @@ export function CampaignHistory({
 
         </div>
       </section>
+<div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+  {/* LEFT */}
+
+  <div className="bg-[#0084D1] text-white rounded-2xl px-5 py-3 text-sm">
+
+    Showing
+    {" "}
+
+    <span className="font-semibold">
+      {(campaignPagination.page - 1) *
+        campaignPagination.limit +
+        1}
+    </span>
+
+    {" "}to{" "}
+
+    <span className="font-semibold">
+      {Math.min(
+        campaignPagination.page *
+          campaignPagination.limit,
+
+        campaignPagination.total
+      )}
+    </span>
+
+    {" "}of{" "}
+
+    <span className="font-semibold">
+      {campaignPagination.total}
+    </span>
+  </div>
+
+  {/* RIGHT */}
+
+  <div className="flex items-center gap-3">
+
+    {/* PREVIOUS */}
+
+    <button
+      disabled={
+        campaignPagination.page === 1
+      }
+      onClick={() =>
+        setCampaignPagination(
+          (prev) => ({
+            ...prev,
+            page:
+              prev.page - 1,
+          })
+        )
+      }
+      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+        campaignPagination.page === 1
+          ? "cursor-not-allowed bg-slate-200 text-slate-400"
+          : "bg-slate-800 text-white hover:bg-slate-700"
+      }`}
+    >
+      Previous
+    </button>
+
+    {/* PAGE BUTTONS */}
+
+    <div className="flex items-center gap-2">
+
+      {Array.from({
+        length:
+          campaignPagination.totalPages,
+      }).map((_, index) => {
+
+        const page =
+          index + 1;
+
+        return (
+          <button
+            key={page}
+            onClick={() =>
+              setCampaignPagination(
+                (prev) => ({
+                  ...prev,
+                  page,
+                })
+              )
+            }
+            className={`h-10 w-10 rounded-xl text-sm font-semibold ${
+              campaignPagination.page ===
+              page
+                ? "bg-sky-500 text-white"
+                : isDark
+                ? "bg-slate-900 text-slate-300"
+                : "bg-slate-100 text-slate-700"
+            }`}
+          >
+            {page}
+          </button>
+        );
+      })}
+    </div>
+
+    {/* NEXT */}
+
+    <button
+      disabled={
+        campaignPagination.page ===
+        campaignPagination.totalPages
+      }
+      onClick={() =>
+        setCampaignPagination(
+          (prev) => ({
+            ...prev,
+            page:
+              prev.page + 1,
+          })
+        )
+      }
+      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+        campaignPagination.page ===
+        campaignPagination.totalPages
+          ? "cursor-not-allowed bg-slate-200 text-slate-400"
+          : "bg-sky-500 text-white hover:bg-sky-600"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+</div>
+
     </div>
   );
 }

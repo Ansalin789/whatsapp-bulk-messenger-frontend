@@ -109,6 +109,16 @@ const [selectedTemplate, setSelectedTemplate] =
     {},
   );
 
+const [search, setSearch] =
+  useState("");
+
+const [categoryFilter, setCategoryFilter] =
+  useState("ALL");
+
+const [statusFilter, setStatusFilter] =
+  useState("ALL");
+
+
   const [variableNames, setVariableNames] = useState<Record<string, string>>(
     {},
   );
@@ -122,11 +132,53 @@ const [selectedTemplate, setSelectedTemplate] =
   const [footer, setFooter] = useState("");
 
   const [buttons, setButtons] = useState<string[]>([]);
-
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+const [pagination, setPagination] = useState({
+  total: 0,
+  page: 1,
+  limit: 5,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+});
+
+const filteredTemplates =
+  templates.filter((template) => {
+
+    const matchesSearch =
+      template.name
+        ?.toLowerCase()
+        .includes(
+          search.toLowerCase()
+        ) ||
+      template.category
+        ?.toLowerCase()
+        .includes(
+          search.toLowerCase()
+        );
+
+    const matchesCategory =
+      categoryFilter === "ALL"
+        ? true
+        : template.category ===
+          categoryFilter;
+
+    const matchesStatus =
+      statusFilter === "ALL"
+        ? true
+        : template.status ===
+          statusFilter;
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesStatus
+    );
+  });
+
 
   const sectionStyle = isDark
     ? "border-slate-800 bg-slate-900 text-white"
@@ -147,7 +199,7 @@ const [selectedTemplate, setSelectedTemplate] =
 
     try {
       const response = await fetch(
-        `http://localhost:5000/templates/v1/getall?${queryParams.toString()}`,
+        `http://localhost:5000/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -175,6 +227,25 @@ const [selectedTemplate, setSelectedTemplate] =
       }
 
       setTemplates(list);
+      setPagination({
+  total:
+    resData.pagination?.total || 0,
+
+  page:
+    resData.pagination?.page || 1,
+
+  limit:
+    resData.pagination?.limit || 10,
+
+  totalPages:
+    resData.pagination?.totalPages || 1,
+
+  hasNextPage:
+    resData.pagination?.hasNextPage || false,
+
+  hasPreviousPage:
+    resData.pagination?.hasPreviousPage || false,
+});
     } catch (err) {
       console.error("Error fetching templates:", err);
       setListError(
@@ -203,7 +274,7 @@ const [selectedTemplate, setSelectedTemplate] =
 
   useEffect(() => {
     fetchTemplates();
-  }, [tenantId, createdBy]);
+}, [tenantId, createdBy, pagination.page]);
 
   const extractVariables = (text: string) => {
     const matches = text.match(/{{(.*?)}}/g) || [];
@@ -525,6 +596,93 @@ useEffect(() => {
       {/* TOP SECTION */}
 
       <section className={`rounded-4xl p-6 border ${sectionStyle}`}>
+        <div className="flex flex-col xl:flex-row gap-4 mb-6">
+
+  {/* SEARCH */}
+
+  <div className="flex-1">
+
+    <input
+      type="text"
+      placeholder="Search templates..."
+      value={search}
+      onChange={(e) =>
+        setSearch(
+          e.target.value
+        )
+      }
+      className={`w-full rounded-2xl border px-5 py-3 text-sm outline-none ${
+        isDark
+          ? "bg-slate-900 border-slate-700 text-white"
+          : "bg-white border-slate-200 text-black"
+      }`}
+    />
+  </div>
+
+  {/* CATEGORY */}
+
+  <select
+    value={categoryFilter}
+    onChange={(e) =>
+      setCategoryFilter(
+        e.target.value
+      )
+    }
+    className={`rounded-2xl border px-5 py-3 text-sm ${
+      isDark
+        ? "bg-slate-900 border-slate-700 text-white"
+        : "bg-white border-slate-200 text-black"
+    }`}
+  >
+    <option value="ALL">
+      All Categories
+    </option>
+
+    <option value="UTILITY">
+      Utility
+    </option>
+
+    <option value="MARKETING">
+      Marketing
+    </option>
+
+    <option value="AUTHENTICATION">
+      Authentication
+    </option>
+  </select>
+
+  {/* STATUS */}
+
+  <select
+    value={statusFilter}
+    onChange={(e) =>
+      setStatusFilter(
+        e.target.value
+      )
+    }
+    className={`rounded-2xl border px-5 py-3 text-sm ${
+      isDark
+        ? "bg-slate-900 border-slate-700 text-white"
+        : "bg-white border-slate-200 text-black"
+    }`}
+  >
+    <option value="ALL">
+      All Status
+    </option>
+
+    <option value="PENDING">
+      Pending
+    </option>
+
+    <option value="APPROVED">
+      Approved
+    </option>
+
+    <option value="REJECTED">
+      Rejected
+    </option>
+  </select>
+</div>
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Saved Templates</h2>
@@ -549,12 +707,12 @@ useEffect(() => {
             <div className="col-span-full rounded-2xl border p-6 text-center text-sm text-rose-600">
               {listError}
             </div>
-          ) : templates.length === 0 ? (
+          ) : filteredTemplates.length === 0 ? (
             <div className="col-span-full rounded-2xl border p-6 text-center text-sm opacity-70">
               No saved templates yet. Click "Create Template" to add one.
             </div>
           ) : (
-           templates.map((template) => {
+           filteredTemplates.map((template) => {
   const bodyComponent =
     template.components?.find(
       (c: any) => c.type === "BODY"
@@ -571,6 +729,7 @@ useEffect(() => {
     );
 
   return (
+    
     <div
       key={template.name}
       className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
@@ -579,6 +738,10 @@ useEffect(() => {
           : "bg-white border-slate-200"
       }`}
     >
+     
+
+
+
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-cyan-400" />
 
       <div className="p-6">
@@ -639,6 +802,134 @@ useEffect(() => {
           )}
         </div>
       </section>
+
+
+<div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+  {/* LEFT */}
+
+  <div className="bg-[#0084D1] text-white rounded-2xl px-5 py-3 text-sm">
+
+    Showing
+    {" "}
+
+    <span className="font-semibold">
+      {(pagination.page - 1) *
+        pagination.limit +
+        1}
+    </span>
+
+    {" "}to{" "}
+
+    <span className="font-semibold">
+      {Math.min(
+        pagination.page *
+          pagination.limit,
+
+        pagination.total
+      )}
+    </span>
+
+    {" "}of{" "}
+
+    <span className="font-semibold">
+      {pagination.total}
+    </span>
+  </div>
+
+  {/* RIGHT */}
+
+  <div className="flex items-center gap-3">
+
+    {/* PREVIOUS */}
+
+    <button
+      disabled={
+        pagination.page === 1
+      }
+      onClick={() =>
+        setPagination(
+          (prev) => ({
+            ...prev,
+            page:
+              prev.page - 1,
+          })
+        )
+      }
+      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+        pagination.page === 1
+          ? "cursor-not-allowed bg-slate-200 text-slate-400"
+          : "bg-slate-800 text-white hover:bg-slate-700"
+      }`}
+    >
+      Previous
+    </button>
+
+    {/* PAGE BUTTONS */}
+
+    <div className="flex items-center gap-2">
+
+      {Array.from({
+        length:
+          pagination.totalPages,
+      }).map((_, index) => {
+
+        const page =
+          index + 1;
+
+        return (
+          <button
+            key={page}
+            onClick={() =>
+              setPagination(
+                (prev) => ({
+                  ...prev,
+                  page,
+                })
+              )
+            }
+            className={`h-10 w-10 rounded-xl text-sm font-semibold ${
+              pagination.page ===
+              page
+                ? "bg-sky-500 text-white"
+                : isDark
+                ? "bg-slate-900 text-slate-300"
+                : "bg-slate-100 text-slate-700"
+            }`}
+          >
+            {page}
+          </button>
+        );
+      })}
+    </div>
+
+    {/* NEXT */}
+
+    <button
+      disabled={
+        pagination.page ===
+        pagination.totalPages
+      }
+      onClick={() =>
+        setPagination(
+          (prev) => ({
+            ...prev,
+            page:
+              prev.page + 1,
+          })
+        )
+      }
+      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+        pagination.page ===
+        pagination.totalPages
+          ? "cursor-not-allowed bg-slate-200 text-slate-400"
+          : "bg-sky-500 text-white hover:bg-sky-600"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+</div>
 
 
 {viewOpen && selectedTemplate && (
