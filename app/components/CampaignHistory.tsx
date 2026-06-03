@@ -14,6 +14,10 @@ export function CampaignHistory({
   const [campaignRuns, setCampaignRuns] =
     useState<any[]>([]);
 
+const [overallStats, setOverallStats] =
+  useState<any>(null);
+
+
   const [campaignLoading, setCampaignLoading] =
     useState(true);
 
@@ -54,6 +58,58 @@ const [
     : "text-slate-500";
 
   const t = (text: string) => text;
+
+
+const fetchOverallStats =
+  async () => {
+
+    try {
+
+      const token =
+        getAccessToken();
+
+      const response =
+        await fetch(
+          "http://localhost:5000/campaignrun/v1/overallstats",
+          {
+            method: "GET",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              ...(token
+                ? {
+                    Authorization:
+                      `Bearer ${token}`,
+                  }
+                : {}),
+            },
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+      }
+
+      const result =
+        await response.json();
+
+      setOverallStats(result);
+
+    } catch (error) {
+
+      console.error(
+        "Overall stats error:",
+        error
+      );
+    }
+  };
+
+
+
 
   const fetchCampaignRuns = async () => {
     setCampaignLoading(true);
@@ -117,9 +173,16 @@ setCampaignPagination((prev) => ({
     }
   };
 
+
 useEffect(() => {
+
   fetchCampaignRuns();
+
+  fetchOverallStats();
+
 }, [campaignPagination.page]);
+
+
 
 const filteredCampaigns =
   campaignRuns.filter(
@@ -162,271 +225,381 @@ const filteredCampaigns =
 
       {/* METRIC CARDS */}
 
-<section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+<section className="grid grid-cols-1 xl:grid-cols-4 gap-4">
 
   {/* TOTAL CAMPAIGNS */}
 
-  <div
-    className={`rounded-[1.5rem] border p-4 ${
-      isDark
-        ? "border-slate-800 bg-slate-950/80"
-        : "border-slate-200 bg-white"
-    }`}
-  >
+ 
+<div
+  className={`rounded-[1.5rem] border p-4 ${
+    isDark
+      ? "border-slate-800 bg-slate-950/80"
+      : "border-slate-200 bg-white"
+  }`}
+>
 
-    <div className="flex items-start justify-between">
+  <div className="flex items-center justify-between">
 
-      <div>
+    <div>
 
-        <p className="text-base text-slate-400">
-          Total Campaigns
-        </p>
+      <p className="text-sm text-slate-400">
+        Campaigns
+      </p>
 
-        <h2 className="mt-3 text-3xl font-bold">
-          {campaignPagination.total}
-        </h2>
-      </div>
-
-      <div className="rounded-xl bg-sky-500/10 p-3">
-        📢
-      </div>
+      <h2 className="mt-2 text-3xl font-bold">
+        {overallStats?.campaign?.totalCampaigns || 0}
+      </h2>
     </div>
 
-    <div className="mt-5 h-2 rounded-full bg-slate-200 overflow-hidden">
-
-      <div className="h-full w-[78%] rounded-full bg-sky-500" />
+    <div className="rounded-xl bg-sky-500/10 p-3">
+      📢
     </div>
-
-    <p className="mt-3 text-sm text-slate-400">
-      Active campaign performance
-    </p>
   </div>
+
+  <div className="mt-5 space-y-3">
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Completed
+      </span>
+
+      <span className="font-semibold text-emerald-500">
+        {overallStats?.campaign?.completedCampaigns || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Draft
+      </span>
+
+      <span className="font-semibold text-amber-500">
+        {overallStats?.campaign?.draftCampaigns || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Running
+      </span>
+
+      <span className="font-semibold text-sky-500">
+        {overallStats?.campaign?.runningCampaigns || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Failed
+      </span>
+
+      <span className="font-semibold text-rose-500">
+        {overallStats?.campaign?.failedCampaigns || 0}
+      </span>
+    </div>
+   
+<div className="flex items-center justify-between">
+  <span className="text-sm text-slate-400">
+    Active
+  </span>
+
+  <span className="font-semibold text-cyan-500">
+    {overallStats?.campaign?.activeCampaigns || 0}
+  </span>
+</div>
+
+<div className="flex items-center justify-between">
+  <span className="text-sm text-slate-400">
+    Scheduled
+  </span>
+
+  <span className="font-semibold text-indigo-500">
+    {overallStats?.campaign?.scheduledCampaigns || 0}
+  </span>
+</div>
+
+
+  </div>
+</div>
+
+
 
   {/* MESSAGE SENT */}
 
-  <div
-    className={`rounded-[1.5rem] border p-4 ${
-      isDark
-        ? "border-slate-800 bg-slate-950/80"
-        : "border-slate-200 bg-white"
-    }`}
-  >
+<div
+  className={`rounded-[1.5rem] border p-4 ${
+    isDark
+      ? "border-slate-800 bg-slate-950/80"
+      : "border-slate-200 bg-white"
+  }`}
+>
 
-    <div className="flex items-start justify-between">
+  <div className="flex items-center justify-between">
 
-      <div>
+    <div>
 
-        <p className="text-base text-slate-400">
-          Messages Sent
-        </p>
+      <p className="text-sm text-slate-400">
+        Contacts
+      </p>
 
-        <h2 className="mt-3 text-3xl font-bold">
-          {campaignRuns.reduce(
-            (acc, item) =>
-              acc +
-              (item.sentCount || 0),
-            0
-          )}
-        </h2>
-      </div>
-
-      <div className="rounded-xl bg-emerald-500/10 p-3">
-        💬
-      </div>
+      <h2 className="mt-2 text-3xl font-bold">
+        {overallStats?.contacts?.totalContacts || 0}
+      </h2>
     </div>
 
-    {/* SPLIT */}
-
-    <div className="mt-5 space-y-3">
-
-      {/* MARKETING */}
-
-      <div className="flex items-center justify-between">
-
-        <div>
-          <p className="text-sm font-medium">
-            Marketing
-          </p>
-
-          <p className="text-xs text-slate-400">
-            Marketing template messages
-          </p>
-        </div>
-
-        <h4 className="text-base font-bold text-sky-500">
-          {
-            campaignRuns
-              .filter(
-                (item) =>
-                  item.category ===
-                  "MARKETING"
-              )
-              .reduce(
-                (acc, item) =>
-                  acc +
-                  (item.sentCount || 0),
-                0
-              )
-          }
-        </h4>
-      </div>
-
-      {/* UTILITY */}
-
-      <div className="flex items-center justify-between">
-
-        <div>
-          <p className="text-sm font-medium">
-            Utility
-          </p>
-
-          <p className="text-xs text-slate-400">
-            Utility template messages
-          </p>
-        </div>
-
-        <h4 className="text-base font-bold text-emerald-500">
-          {
-            campaignRuns
-              .filter(
-                (item) =>
-                  item.category ===
-                  "UTILITY"
-              )
-              .reduce(
-                (acc, item) =>
-                  acc +
-                  (item.sentCount || 0),
-                0
-              )
-          }
-        </h4>
-      </div>
+    <div className="rounded-xl bg-emerald-500/10 p-3">
+      👥
     </div>
   </div>
+
+  <div className="mt-5 space-y-3">
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Sent
+      </span>
+
+      <span className="font-semibold text-sky-500">
+        {overallStats?.contacts?.sentCount || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Delivered
+      </span>
+
+      <span className="font-semibold text-emerald-500">
+        {overallStats?.contacts?.deliveredCount || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Pending
+      </span>
+
+      <span className="font-semibold text-amber-500">
+        {overallStats?.contacts?.pendingCount || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Failed
+      </span>
+
+      <span className="font-semibold text-rose-500">
+        {overallStats?.contacts?.failedCount || 0}
+      </span>
+    </div>
+   
+
+{/* QUEUED */}
+
+<div className="flex items-center justify-between">
+
+  <span className="text-sm text-slate-400">
+    Queued
+  </span>
+
+  <span className="font-semibold text-violet-500">
+    {overallStats?.contacts?.queuedCount || 0}
+  </span>
+</div>
+
+{/* READ */}
+
+<div className="flex items-center justify-between">
+
+  <span className="text-sm text-slate-400">
+    Read
+  </span>
+
+  <span className="font-semibold text-sky-500">
+    {overallStats?.contacts?.readCount || 0}
+  </span>
+</div>
+
+
+
+
+  </div>
+</div>
+
+
 
   {/* TOTAL REVENUE */}
 
-  <div
-    className={`rounded-[1.5rem] border p-4 ${
-      isDark
-        ? "border-slate-800 bg-slate-950/80"
-        : "border-slate-200 bg-white"
-    }`}
-  >
+ 
+<div
+  className={`rounded-[1.5rem] border p-4 ${
+    isDark
+      ? "border-slate-800 bg-slate-950/80"
+      : "border-slate-200 bg-white"
+  }`}
+>
 
-    {/* TOP */}
+  <div className="flex items-center justify-between">
 
-    <div className="flex items-start justify-between">
+    <div>
 
-      <div>
+      <p className="text-sm text-slate-400">
+        Rates
+      </p>
 
-        <p className="text-base text-slate-400">
-          Total Revenue
-        </p>
-
-        <h2 className="mt-3 text-3xl font-bold">
-          ₹
-          {campaignRuns.reduce(
-            (acc, item) =>
-              acc +
-              ((item.sentCount || 0) *
-                2),
-            0
-          )}
-        </h2>
-      </div>
-
-      <div className="rounded-xl bg-violet-500/10 p-3">
-        💰
-      </div>
+      <h2 className="mt-2 text-3xl font-bold">
+        {overallStats?.rates?.deliveryRate || 0}%
+      </h2>
     </div>
 
-    {/* SPLIT */}
-
-    <div className="mt-5 space-y-3">
-
-      {/* MARKETING */}
-
-      <div className="rounded-xl bg-slate-100/50 p-4">
-
-        <div className="flex items-center justify-between">
-
-          <div>
-
-            <p className="text-sm font-medium">
-              Marketing
-            </p>
-
-            <p className="text-xs text-slate-400">
-              Marketing revenue
-            </p>
-          </div>
-
-          <h4 className="text-base font-bold text-sky-500">
-
-            ₹
-            {
-              campaignRuns
-                .filter(
-                  (item) =>
-                    item.category ===
-                    "MARKETING"
-                )
-                .reduce(
-                  (acc, item) =>
-                    acc +
-                    ((item.sentCount ||
-                      0) *
-                      2),
-                  0
-                )
-            }
-          </h4>
-        </div>
-      </div>
-
-      {/* UTILITY */}
-
-      <div className="rounded-xl bg-slate-100/50 p-4">
-
-        <div className="flex items-center justify-between">
-
-          <div>
-
-            <p className="text-sm font-medium">
-              Utility
-            </p>
-
-            <p className="text-xs text-slate-400">
-              Utility revenue
-            </p>
-          </div>
-
-          <h4 className="text-base font-bold text-emerald-500">
-
-            ₹
-            {
-              campaignRuns
-                .filter(
-                  (item) =>
-                    item.category ===
-                    "UTILITY"
-                )
-                .reduce(
-                  (acc, item) =>
-                    acc +
-                    ((item.sentCount ||
-                      0) *
-                      1),
-                  0
-                )
-            }
-          </h4>
-        </div>
-      </div>
+    <div className="rounded-xl bg-violet-500/10 p-3">
+      📈
     </div>
   </div>
+
+  <div className="mt-5 space-y-3">
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Delivery Rate
+      </span>
+
+      <span className="font-semibold text-emerald-500">
+        {overallStats?.rates?.deliveryRate || 0}%
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Read Rate
+      </span>
+
+      <span className="font-semibold text-sky-500">
+        {overallStats?.rates?.readRate || 0}%
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Failure Rate
+      </span>
+
+      <span className="font-semibold text-rose-500">
+        {overallStats?.rates?.failureRate || 0}%
+      </span>
+    </div>
+  </div>
+</div>
+
+
+<div
+  className={`rounded-[1.5rem] border p-4 ${
+    isDark
+      ? "border-slate-800 bg-slate-950/80"
+      : "border-slate-200 bg-white"
+  }`}
+>
+
+  <div className="flex items-center justify-between">
+
+    <div>
+
+      <p className="text-sm text-slate-400">
+        Billing
+      </p>
+
+      <h2 className="mt-2 text-3xl font-bold">
+        ₹
+        {overallStats?.billing?.totalAmount || 0}
+      </h2>
+    </div>
+
+    <div className="rounded-xl bg-amber-500/10 p-3">
+      💰
+    </div>
+  </div>
+
+  <div className="mt-5 space-y-3">
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Utility
+      </span>
+
+      <span className="font-semibold text-emerald-500">
+        ₹
+        {overallStats?.billing?.utilityAmount || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Marketing
+      </span>
+
+      <span className="font-semibold text-sky-500">
+        ₹
+        {overallStats?.billing?.marketingAmount || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Authentication
+      </span>
+
+      <span className="font-semibold text-violet-500">
+        ₹
+        {overallStats?.billing?.authenticationAmount || 0}
+      </span>
+    </div>
+   
+<div className="mt-4 rounded-xl bg-slate-100/50 p-3">
+
+  <p className="text-xs text-slate-400 mb-3">
+    Message Types
+  </p>
+
+  <div className="space-y-2">
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm">
+        Utility
+      </span>
+
+      <span className="font-semibold text-emerald-500">
+        {overallStats?.billing?.utilityMessages || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm">
+        Marketing
+      </span>
+
+      <span className="font-semibold text-sky-500">
+        {overallStats?.billing?.marketingMessages || 0}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <span className="text-sm">
+        Authentication
+      </span>
+
+      <span className="font-semibold text-violet-500">
+        {overallStats?.billing?.authenticationMessages || 0}
+      </span>
+    </div>
+  </div>
+</div>
+
+
+  </div>
+</div>
+
+
 </section>
 
 
