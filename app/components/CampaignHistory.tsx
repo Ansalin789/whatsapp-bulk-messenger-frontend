@@ -126,12 +126,12 @@ const filteredCampaigns =
     (campaign) => {
 
       const matchesSearch =
-        campaign.campaignId
+        campaign.campaignName
           ?.toLowerCase()
           .includes(
             search.toLowerCase()
           ) ||
-        campaign.templateId
+        campaign.templateName
           ?.toLowerCase()
           .includes(
             search.toLowerCase()
@@ -158,88 +158,277 @@ const filteredCampaigns =
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
       {/* METRIC CARDS */}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-        <article
-          className={`rounded-[2rem] p-6 shadow-lg transition-transform hover:scale-[1.01] ${cardStyle}`}
-        >
-          <p
-            className={`text-sm uppercase tracking-[0.24em] ${mutedText}`}
-          >
-            {t("Total Campaigns")}
+  {/* TOTAL CAMPAIGNS */}
+
+  <div
+    className={`rounded-[1.5rem] border p-4 ${
+      isDark
+        ? "border-slate-800 bg-slate-950/80"
+        : "border-slate-200 bg-white"
+    }`}
+  >
+
+    <div className="flex items-start justify-between">
+
+      <div>
+
+        <p className="text-base text-slate-400">
+          Total Campaigns
+        </p>
+
+        <h2 className="mt-3 text-3xl font-bold">
+          {campaignPagination.total}
+        </h2>
+      </div>
+
+      <div className="rounded-xl bg-sky-500/10 p-3">
+        📢
+      </div>
+    </div>
+
+    <div className="mt-5 h-2 rounded-full bg-slate-200 overflow-hidden">
+
+      <div className="h-full w-[78%] rounded-full bg-sky-500" />
+    </div>
+
+    <p className="mt-3 text-sm text-slate-400">
+      Active campaign performance
+    </p>
+  </div>
+
+  {/* MESSAGE SENT */}
+
+  <div
+    className={`rounded-[1.5rem] border p-4 ${
+      isDark
+        ? "border-slate-800 bg-slate-950/80"
+        : "border-slate-200 bg-white"
+    }`}
+  >
+
+    <div className="flex items-start justify-between">
+
+      <div>
+
+        <p className="text-base text-slate-400">
+          Messages Sent
+        </p>
+
+        <h2 className="mt-3 text-3xl font-bold">
+          {campaignRuns.reduce(
+            (acc, item) =>
+              acc +
+              (item.sentCount || 0),
+            0
+          )}
+        </h2>
+      </div>
+
+      <div className="rounded-xl bg-emerald-500/10 p-3">
+        💬
+      </div>
+    </div>
+
+    {/* SPLIT */}
+
+    <div className="mt-5 space-y-3">
+
+      {/* MARKETING */}
+
+      <div className="flex items-center justify-between">
+
+        <div>
+          <p className="text-sm font-medium">
+            Marketing
           </p>
 
-          <p className="mt-4 text-4xl font-semibold">
-            {campaignRuns.length}
+          <p className="text-xs text-slate-400">
+            Marketing template messages
           </p>
+        </div>
 
-          <p
-            className={`mt-2 text-sm ${mutedText}`}
-          >
-            {t(
-              "Campaign runs available in history."
-            )}
-          </p>
-        </article>
-
-        <article
-          className={`rounded-[2rem] p-6 shadow-lg transition-transform hover:scale-[1.01] ${cardStyle}`}
-        >
-          <p
-            className={`text-sm uppercase tracking-[0.24em] ${mutedText}`}
-          >
-            {t("Messages Sent")}
-          </p>
-
-          <p className="mt-4 text-4xl font-semibold">
-            {campaignRuns.reduce(
-              (acc, item) =>
-                acc + (item.sentCount || 0),
-              0
-            )}
-          </p>
-
-          <p
-            className={`mt-2 text-sm ${mutedText}`}
-          >
-            {t(
-              "Messages successfully sent."
-            )}
-          </p>
-        </article>
-
-        <article
-          className={`rounded-[2rem] p-6 shadow-lg transition-transform hover:scale-[1.01] ${cardStyle}`}
-        >
-          <p
-            className={`text-sm uppercase tracking-[0.24em] ${mutedText}`}
-          >
-            {t("Completed")}
-          </p>
-
-          <p className="mt-4 text-4xl font-semibold">
-            {
-              campaignRuns.filter(
+        <h4 className="text-base font-bold text-sky-500">
+          {
+            campaignRuns
+              .filter(
                 (item) =>
-                  item.status ===
-                  "COMPLETED"
-              ).length
-            }
+                  item.category ===
+                  "MARKETING"
+              )
+              .reduce(
+                (acc, item) =>
+                  acc +
+                  (item.sentCount || 0),
+                0
+              )
+          }
+        </h4>
+      </div>
+
+      {/* UTILITY */}
+
+      <div className="flex items-center justify-between">
+
+        <div>
+          <p className="text-sm font-medium">
+            Utility
           </p>
 
-          <p
-            className={`mt-2 text-sm ${mutedText}`}
-          >
-            {t(
-              "Successfully completed campaigns."
-            )}
+          <p className="text-xs text-slate-400">
+            Utility template messages
           </p>
-        </article>
-      </section>
+        </div>
+
+        <h4 className="text-base font-bold text-emerald-500">
+          {
+            campaignRuns
+              .filter(
+                (item) =>
+                  item.category ===
+                  "UTILITY"
+              )
+              .reduce(
+                (acc, item) =>
+                  acc +
+                  (item.sentCount || 0),
+                0
+              )
+          }
+        </h4>
+      </div>
+    </div>
+  </div>
+
+  {/* TOTAL REVENUE */}
+
+  <div
+    className={`rounded-[1.5rem] border p-4 ${
+      isDark
+        ? "border-slate-800 bg-slate-950/80"
+        : "border-slate-200 bg-white"
+    }`}
+  >
+
+    {/* TOP */}
+
+    <div className="flex items-start justify-between">
+
+      <div>
+
+        <p className="text-base text-slate-400">
+          Total Revenue
+        </p>
+
+        <h2 className="mt-3 text-3xl font-bold">
+          ₹
+          {campaignRuns.reduce(
+            (acc, item) =>
+              acc +
+              ((item.sentCount || 0) *
+                2),
+            0
+          )}
+        </h2>
+      </div>
+
+      <div className="rounded-xl bg-violet-500/10 p-3">
+        💰
+      </div>
+    </div>
+
+    {/* SPLIT */}
+
+    <div className="mt-5 space-y-3">
+
+      {/* MARKETING */}
+
+      <div className="rounded-xl bg-slate-100/50 p-4">
+
+        <div className="flex items-center justify-between">
+
+          <div>
+
+            <p className="text-sm font-medium">
+              Marketing
+            </p>
+
+            <p className="text-xs text-slate-400">
+              Marketing revenue
+            </p>
+          </div>
+
+          <h4 className="text-base font-bold text-sky-500">
+
+            ₹
+            {
+              campaignRuns
+                .filter(
+                  (item) =>
+                    item.category ===
+                    "MARKETING"
+                )
+                .reduce(
+                  (acc, item) =>
+                    acc +
+                    ((item.sentCount ||
+                      0) *
+                      2),
+                  0
+                )
+            }
+          </h4>
+        </div>
+      </div>
+
+      {/* UTILITY */}
+
+      <div className="rounded-xl bg-slate-100/50 p-4">
+
+        <div className="flex items-center justify-between">
+
+          <div>
+
+            <p className="text-sm font-medium">
+              Utility
+            </p>
+
+            <p className="text-xs text-slate-400">
+              Utility revenue
+            </p>
+          </div>
+
+          <h4 className="text-base font-bold text-emerald-500">
+
+            ₹
+            {
+              campaignRuns
+                .filter(
+                  (item) =>
+                    item.category ===
+                    "UTILITY"
+                )
+                .reduce(
+                  (acc, item) =>
+                    acc +
+                    ((item.sentCount ||
+                      0) *
+                      1),
+                  0
+                )
+            }
+          </h4>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 
       {/* CAMPAIGN TABLE */}
 
@@ -256,8 +445,8 @@ const filteredCampaigns =
           <h2
             className={
               isDark
-                ? "text-xl font-semibold text-white"
-                : "text-xl font-semibold text-slate-950"
+                ? "text-base font-semibold text-white"
+                : "text-base font-semibold text-slate-950"
             }
           >
             {t("All campaigns")}
@@ -290,7 +479,7 @@ const filteredCampaigns =
           e.target.value
         )
       }
-      className={`w-full rounded-2xl border px-5 py-3 text-sm outline-none ${
+      className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none ${
         isDark
           ? "bg-slate-900 border-slate-700 text-white"
           : "bg-white border-slate-200 text-black"
@@ -307,7 +496,7 @@ const filteredCampaigns =
         e.target.value
       )
     }
-    className={`rounded-2xl border px-5 py-3 text-sm ${
+    className={`rounded-xl border px-4 py-2.5 text-sm ${
       isDark
         ? "bg-slate-900 border-slate-700 text-white"
         : "bg-white border-slate-200 text-black"
@@ -339,7 +528,7 @@ const filteredCampaigns =
         e.target.value
       )
     }
-    className={`rounded-2xl border px-5 py-3 text-sm ${
+    className={`rounded-xl border px-4 py-2.5 text-sm ${
       isDark
         ? "bg-slate-900 border-slate-700 text-white"
         : "bg-white border-slate-200 text-black"
@@ -403,13 +592,13 @@ filteredCampaigns.map((campaign) => (
 
           <div>
             <h3 className="text-lg font-semibold break-all">
-              {campaign.campaignId}
+              {campaign.campaignName}
             </h3>
 
             <p className="mt-1 text-xs text-slate-400 break-all">
               Template:
               {" "}
-              {campaign.templateId}
+              {campaign.templateName}
             </p>
           </div>
 
@@ -428,54 +617,57 @@ filteredCampaigns.map((campaign) => (
 
         {/* METRICS */}
 
-        <div className="mt-6 grid grid-cols-3 gap-4">
+        <div className="mt-5 grid grid-cols-3 gap-4">
 
           <div
-            className={`rounded-2xl p-4 text-center ${
+            className={`rounded-xl p-4 text-center ${
               isDark
                 ? "bg-slate-900"
                 : "bg-slate-50"
             }`}
           >
-            <p className="text-xs text-slate-400">
+            <h4 className="mt-2 text-[25px] font-bold text-sky-500">
+              {campaign.sentCount}
+            </h4>
+            <p className="text-xs text-slate-600 font-semibold">
               Sent
             </p>
 
-            <h4 className="mt-2 text-xl font-bold text-sky-500">
-              {campaign.sentCount}
-            </h4>
+            
           </div>
 
           <div
-            className={`rounded-2xl p-4 text-center ${
+            className={`rounded-xl p-4 text-center ${
               isDark
                 ? "bg-slate-900"
                 : "bg-slate-50"
             }`}
           >
-            <p className="text-xs text-slate-400">
+            <h4 className="mt-2 text-[25px] font-bold text-emerald-500">
+              {campaign.deliveredCount}
+            </h4>
+            <p className="text-xs text-slate-600 font-semibold">
               Delivered
             </p>
 
-            <h4 className="mt-2 text-xl font-bold text-emerald-500">
-              {campaign.deliveredCount}
-            </h4>
+            
           </div>
 
           <div
-            className={`rounded-2xl p-4 text-center ${
+            className={`rounded-xl p-4 text-center ${
               isDark
                 ? "bg-slate-900"
                 : "bg-slate-50"
             }`}
           >
-            <p className="text-xs text-slate-400">
+            <h4 className="mt-2 text-[25px] font-bold text-rose-500">
+              {campaign.failedCount}
+            </h4>
+            <p className="text-xs text-slate-600 font-semibold">
               Failed
             </p>
 
-            <h4 className="mt-2 text-xl font-bold text-rose-500">
-              {campaign.failedCount}
-            </h4>
+            
           </div>
         </div>
 
@@ -484,57 +676,61 @@ filteredCampaigns.map((campaign) => (
         <div className="mt-4 grid grid-cols-3 gap-4">
 
           <div
-            className={`rounded-2xl p-4 text-center ${
+            className={`rounded-xl p-4 text-center ${
               isDark
                 ? "bg-slate-900"
                 : "bg-slate-50"
             }`}
           >
-            <p className="text-xs text-slate-400">
+
+            <h4 className="mt-2 text-[25px] font-bold text-amber-500">
+              {campaign.pendingCount}
+            </h4>
+            <p className="text-xs text-slate-600 font-semibold">
               Pending
             </p>
 
-            <h4 className="mt-2 text-xl font-bold text-amber-500">
-              {campaign.pendingCount}
-            </h4>
+            
           </div>
 
           <div
-            className={`rounded-2xl p-4 text-center ${
+            className={`rounded-xl p-4 text-center ${
               isDark
                 ? "bg-slate-900"
                 : "bg-slate-50"
             }`}
           >
-            <p className="text-xs text-slate-400">
+            <h4 className="mt-2 text-[25px] font-bold text-violet-500">
+              {campaign.readCount}
+            </h4>
+            <p className="text-xs text-slate-600 font-semibold">
               Read
             </p>
 
-            <h4 className="mt-2 text-xl font-bold text-violet-500">
-              {campaign.readCount}
-            </h4>
+            
           </div>
 
           <div
-            className={`rounded-2xl p-4 text-center ${
+            className={`rounded-xl p-4 text-center ${
               isDark
                 ? "bg-slate-900"
                 : "bg-slate-50"
             }`}
           >
-            <p className="text-xs text-slate-400">
+            <h4 className="mt-2 text-[25px] font-bold">
+              {campaign.totalContacts}
+            </h4>
+            <p className="text-xs text-slate-600 font-semibold">
               Contacts
             </p>
 
-            <h4 className="mt-2 text-xl font-bold">
-              {campaign.totalContacts}
-            </h4>
+            
           </div>
         </div>
 
         {/* DETAILS */}
 
-        <div className="mt-6 space-y-3 text-sm">
+        <div className="mt-5 space-y-3 text-sm">
 
           <div className="flex items-center justify-between">
             <span className="text-slate-400">
@@ -601,7 +797,7 @@ filteredCampaigns.map((campaign) => (
 
   {/* LEFT */}
 
-  <div className="bg-[#0084D1] text-white rounded-2xl px-5 py-3 text-sm">
+  <div className="bg-[#0084D1] text-white rounded-xl px-4 py-2.5 text-sm">
 
     Showing
     {" "}
@@ -649,7 +845,7 @@ filteredCampaigns.map((campaign) => (
           })
         )
       }
-      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+      className={`rounded-xl px-4 py-2.5 text-sm font-medium ${
         campaignPagination.page === 1
           ? "cursor-not-allowed bg-slate-200 text-slate-400"
           : "bg-slate-800 text-white hover:bg-slate-700"
@@ -712,7 +908,7 @@ filteredCampaigns.map((campaign) => (
           })
         )
       }
-      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+      className={`rounded-xl px-4 py-2.5 text-sm font-medium ${
         campaignPagination.page ===
         campaignPagination.totalPages
           ? "cursor-not-allowed bg-slate-200 text-slate-400"

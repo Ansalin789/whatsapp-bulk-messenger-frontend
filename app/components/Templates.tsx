@@ -759,6 +759,9 @@ useEffect(() => {
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
                 {template.language}
               </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                {template.status || "N/A"}
+              </span>
             </div>
           </div>
         </div>
