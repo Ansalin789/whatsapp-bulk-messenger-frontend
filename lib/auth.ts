@@ -13,8 +13,9 @@ import {
   getUserId as getStoredUserId,
 
 } from "../utils/authStorage";
+import { getDeviceId } from "@/utils/devideId";
 
-const API_URL = "http://localhost:5000/auth/v1/login";
+const API_URL = "https://apiwhatsapp.blackstoneinfomaticstech.com/auth/v1/login";
 
 export interface LoginResponse {
   message: string;
@@ -55,7 +56,7 @@ export async function login(
       body: JSON.stringify({
         username,
         password,
-        deviceId: "device-001",
+        deviceId: getDeviceId(),
         appVersion: "1.0.0",
         role: "ADMIN",
       }),
@@ -112,61 +113,61 @@ if (data.userId) {
     return {
       success: false,
       error: errorMsg.includes("Failed to fetch")
-        ? "Cannot connect to server at http://localhost:5000. Is the backend running?"
+        ? "Cannot connect to server at https://apiwhatsapp.blackstoneinfomaticstech.com. Is the backend running?"
         : errorMsg,
     };
   }
 }
 
-export async function refreshAccessToken() {
-  const refreshToken = getStoredRefreshToken();
-  if (!refreshToken) {
-    return { success: false, error: "No refresh token available" };
-  }
+// export async function refreshAccessToken() {
+//   const refreshToken = getStoredRefreshToken();
+//   if (!refreshToken) {
+//     return { success: false, error: "No refresh token available" };
+//   }
 
-  try {
-    const response = await fetch("http://localhost:5000/auth/v1/refresh", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
+//   try {
+//     const response = await fetch("https://apiwhatsapp.blackstoneinfomaticstech.com/auth/v1/refresh", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({ refreshToken }),
+//     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: errorText || `Unable to refresh token (${response.status})`,
-      };
-    }
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       return {
+//         success: false,
+//         error: errorText || `Unable to refresh token (${response.status})`,
+//       };
+//     }
 
-    const result = await response.json();
-    if (result.success && result.data?.accessToken) {
-      setAccessToken(result.data.accessToken);
-      if (result.data.refreshToken) {
-        setRefreshToken(result.data.refreshToken);
-      }
-      return {
-        success: true,
-        data: {
-          accessToken: result.data.accessToken,
-          refreshToken: result.data.refreshToken,
-        },
-      };
-    }
+//     const result = await response.json();
+//     if (result.success && result.data?.accessToken) {
+//       setAccessToken(result.data.accessToken);
+//       if (result.data.refreshToken) {
+//         setRefreshToken(result.data.refreshToken);
+//       }
+//       return {
+//         success: true,
+//         data: {
+//           accessToken: result.data.accessToken,
+//           refreshToken: result.data.refreshToken,
+//         },
+//       };
+//     }
 
-    return {
-      success: false,
-      error: result.error || "Failed to refresh token",
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Token refresh failed",
-    };
-  }
-}
+//     return {
+//       success: false,
+//       error: result.error || "Failed to refresh token",
+//     };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       error: error instanceof Error ? error.message : "Token refresh failed",
+//     };
+//   }
+// }
 
 export function logout() {
   clearTokens();

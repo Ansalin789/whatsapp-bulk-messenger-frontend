@@ -1,5 +1,15 @@
-import { getAccessExp, getRefreshToken, setAccessExp, setAccessToken, setRefreshToken } from "@/utils/authStorage";
+
 import axios from "axios";
+
+import {
+  getAccessExp,
+  getRefreshToken,
+  setAccessExp,
+  setAccessToken,
+  setRefreshToken,
+} from "@/utils/authStorage";
+
+import { getDeviceId } from "@/utils/devideId";
 
 let refreshTimeout: NodeJS.Timeout;
 
@@ -25,6 +35,7 @@ export const startRefreshTimer = (
 
   const now = Date.now();
 
+  // refresh before 1 minute
   const refreshBefore =
     60 * 1000;
 
@@ -32,8 +43,6 @@ export const startRefreshTimer = (
     expiryTime -
     now -
     refreshBefore;
-
-
 
   console.log(
     "Expiry Time:",
@@ -54,6 +63,7 @@ export const startRefreshTimer = (
 
   if (timeout <= 0) {
     refreshAccessToken();
+
     return;
   }
 
@@ -76,21 +86,37 @@ export const refreshAccessToken =
 
       if (!refreshToken) return;
 
-      const response = await axios.post(
-        "http://localhost:5000/auth/v1/token",
-        {
-          refreshToken,
-          deviceId: "device-001",
-        }
+      const deviceId =
+        getDeviceId();
+
+      console.log(
+        "Using Device ID:",
+        deviceId
       );
 
-      const data = response.data;
-     
-      setAccessToken(data.accessToken);
+      const response =
+        await axios.post(
+          "https://apiwhatsapp.blackstoneinfomaticstech.com/auth/v1/token",
+          {
+            refreshToken,
+            deviceId,
+          }
+        );
 
-      setRefreshToken(data.refreshToken);
+      const data =
+        response.data;
 
-      setAccessExp(data.accessExp);
+      setAccessToken(
+        data.accessToken
+      );
+
+      setRefreshToken(
+        data.refreshToken
+      );
+
+      setAccessExp(
+        data.accessExp
+      );
 
       console.log(
         "Access token refreshed"
@@ -106,8 +132,9 @@ export const refreshAccessToken =
         error
       );
 
-    //   localStorage.clear();
+      // localStorage.clear();
 
-      window.location.href = "/";
+      // window.location.href = "/";
     }
   };
+

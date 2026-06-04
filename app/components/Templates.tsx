@@ -199,7 +199,7 @@ const filteredTemplates =
 
     try {
       const response = await fetch(
-        `http://localhost:5000/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
+        `https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -514,7 +514,7 @@ if (category === "UTILITY") {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/templates/v1/create",
+        "https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/create",
         {
           method: "POST",
           headers: {

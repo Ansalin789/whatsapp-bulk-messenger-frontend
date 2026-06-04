@@ -59,7 +59,7 @@ export default function DashboardClient() {
                     (isDark ? "text-white" : "text-slate-950")
                   }
                 >
-                  {activeSection === "campaigns" && "Create Campaign"}
+                  {activeSection === "campaigns" && "Campaign"}
                   {activeSection === "history" && "Campaign History"}
                   {activeSection === "templates" && "Message Templates"}
                 </h1>
