@@ -13,40 +13,68 @@ let tenantId: string | null = null;
 
 export const setAccessToken = (token: string) => {
   accessToken = token;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("accessToken", token);
+  }
 };
 
 export const getAccessToken = () => {
-  return accessToken;
+  if (accessToken) return accessToken;
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("accessToken");
+  }
+  return null;
 };
 
 /* REFRESH TOKEN */
 
 export const setRefreshToken = (token: string) => {
   refreshToken = token;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("refreshToken", token);
+  }
 };
 
 export const getRefreshToken = () => {
-  return refreshToken;
+  if (refreshToken) return refreshToken;
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("refreshToken");
+  }
+  return null;
 };
 
 /* ACCESS EXPIRY */
 
 export const setAccessExp = (exp: number) => {
   accessExp = exp;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("accessExp", exp.toString());
+  }
 };
 
 export const getAccessExp = () => {
-  return accessExp;
+  if (accessExp) return accessExp;
+  if (typeof window !== "undefined") {
+    const storedExp = localStorage.getItem("accessExp");
+    return storedExp ? Number(storedExp) : null;
+  }
 };
 
 /* REFRESH EXPIRY */
 
 export const setRefreshExp = (exp: number) => {
   refreshExp = exp;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("refreshExp", exp.toString());
+  }
 };
 
 export const getRefreshExp = () => {
-  return refreshExp;
+  if (refreshExp) return refreshExp;
+  if (typeof window !== "undefined") {
+    const storedExp = localStorage.getItem("refreshExp");
+    return storedExp ? Number(storedExp) : null;
+  }
 };
 
 /* USERNAME */
