@@ -400,17 +400,16 @@ export function Templates({ isDark }: TemplatesProps) {
       return;
     }
 
-    if (
-      hasVariables &&
-      parameterFormat === "NAMED" &&
-      variables.length > 0 &&
-      variables.every((v) => /^\d+$/.test(v))
-    ) {
-      const validationMessage =
-        "For NAMED templates, placeholders must use names like {{customer_name}}, {{order_id}}.";
-      setSubmitMessage(validationMessage);
-      return;
-    }
+   if (
+  hasVariables &&
+  parameterFormat === "NAMED" &&
+  variables.some((v) => /^\d+$/.test(v))
+) {
+  setSubmitMessage(
+    "For NAMED templates, placeholders must use names like {{customer_name}}.",
+  );
+  return;
+}
 
     if (
       variableMode === "WITH_VARIABLES" &&
@@ -466,11 +465,32 @@ export function Templates({ isDark }: TemplatesProps) {
       });
     }
 
-    components.push({
-      type: "BODY",
-      text: body,
-      example: { body_text: bodyExample },
-    });
+   if (parameterFormat === "POSITIONAL") {
+  components.push({
+    type: "BODY",
+    text: body,
+    example: {
+      body_text: [
+        bodyVariables.map(
+          (variable) =>
+            previewValues[variable]?.trim() || `sample_${variable}`,
+        ),
+      ],
+    },
+  });
+} else {
+  components.push({
+    type: "BODY",
+    text: body,
+    example: {
+      body_text_named_params: bodyVariables.map((variable) => ({
+        param_name: variable,
+        example:
+          previewValues[variable]?.trim() || `sample_${variable}`,
+      })),
+    },
+  });
+}
 
     if (footer) {
       components.push({
