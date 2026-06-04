@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAccessToken, getUsername, getUserId } from "@/lib/auth";
+import { getAccessToken } from "@/lib/auth";
+import { getUserId, getUsername } from "@/utils/authStorage";
 interface Button {
   type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
 
@@ -61,7 +62,7 @@ interface TemplatePayload {
 
   language: string;
 
-  parameterFormat: "POSITIONAL";
+  parameterFormat?: "POSITIONAL" | "NAMED";
 
   components: TemplateComponent[];
 
@@ -75,11 +76,9 @@ interface TemplatesProps {
 }
 
 export function Templates({ isDark }: TemplatesProps) {
-
   const [viewOpen, setViewOpen] = useState(false);
 
-const [selectedTemplate, setSelectedTemplate] =
-  useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [open, setOpen] = useState(false);
 
   const [tenantId, setTenantId] = useState("");
@@ -96,6 +95,8 @@ const [selectedTemplate, setSelectedTemplate] =
     "POSITIONAL" | "NAMED"
   >("POSITIONAL");
 
+  const [hasVariables, setHasVariables] = useState(false);
+
   const [languages, setLanguages] = useState<string[]>(["en_US"]);
   const [languageOption, setLanguageOption] = useState("en_US");
 
@@ -109,76 +110,49 @@ const [selectedTemplate, setSelectedTemplate] =
     {},
   );
 
-const [search, setSearch] =
-  useState("");
+  const [search, setSearch] = useState("");
 
-const [categoryFilter, setCategoryFilter] =
-  useState("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
 
-const [statusFilter, setStatusFilter] =
-  useState("ALL");
-
-
-  const [variableNames, setVariableNames] = useState<Record<string, string>>(
-    {},
-  );
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const [previewValues, setPreviewValues] = useState<Record<string, string>>(
     {},
   );
 
-  const [isApplied, setIsApplied] = useState(false);
-
   const [footer, setFooter] = useState("");
+
+  const [variableMode, setVariableMode] = useState<
+    "WITH_VARIABLES" | "WITHOUT_VARIABLES"
+  >("WITHOUT_VARIABLES");
 
   const [buttons, setButtons] = useState<string[]>([]);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
-const [pagination, setPagination] = useState({
-  total: 0,
-  page: 1,
-  limit: 5,
-  totalPages: 1,
-  hasNextPage: false,
-  hasPreviousPage: false,
-});
-
-const filteredTemplates =
-  templates.filter((template) => {
-
-    const matchesSearch =
-      template.name
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        ) ||
-      template.category
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        );
-
-    const matchesCategory =
-      categoryFilter === "ALL"
-        ? true
-        : template.category ===
-          categoryFilter;
-
-    const matchesStatus =
-      statusFilter === "ALL"
-        ? true
-        : template.status ===
-          statusFilter;
-
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesStatus
-    );
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 5,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
   });
 
+  const filteredTemplates = templates.filter((template) => {
+    const matchesSearch =
+      template.name?.toLowerCase().includes(search.toLowerCase()) ||
+      template.category?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCategory =
+      categoryFilter === "ALL" ? true : template.category === categoryFilter;
+
+    const matchesStatus =
+      statusFilter === "ALL" ? true : template.status === statusFilter;
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   const sectionStyle = isDark
     ? "border-slate-800 bg-slate-900 text-white"
@@ -199,7 +173,7 @@ const filteredTemplates =
 
     try {
       const response = await fetch(
-        `https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
+        `http://localhost:5000/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -228,24 +202,18 @@ const filteredTemplates =
 
       setTemplates(list);
       setPagination({
-  total:
-    resData.pagination?.total || 0,
+        total: resData.pagination?.total || 0,
 
-  page:
-    resData.pagination?.page || 1,
+        page: resData.pagination?.page || 1,
 
-  limit:
-    resData.pagination?.limit || 10,
+        limit: resData.pagination?.limit || 10,
 
-  totalPages:
-    resData.pagination?.totalPages || 1,
+        totalPages: resData.pagination?.totalPages || 1,
 
-  hasNextPage:
-    resData.pagination?.hasNextPage || false,
+        hasNextPage: resData.pagination?.hasNextPage || false,
 
-  hasPreviousPage:
-    resData.pagination?.hasPreviousPage || false,
-});
+        hasPreviousPage: resData.pagination?.hasPreviousPage || false,
+      });
     } catch (err) {
       console.error("Error fetching templates:", err);
       setListError(
@@ -274,135 +242,136 @@ const filteredTemplates =
 
   useEffect(() => {
     fetchTemplates();
-}, [tenantId, createdBy, pagination.page]);
+  }, [tenantId, createdBy, pagination.page]);
 
   const extractVariables = (text: string) => {
     const matches = text.match(/{{(.*?)}}/g) || [];
 
     return matches.map((item) => item.replace(/[{}]/g, ""));
   };
+
   const handleSave = async () => {
     const normalizedName = templateName.trim();
     const validNamePattern = /^[a-z0-9_]+$/;
     const variables = extractVariables(body);
-// ===============================
-// CATEGORY VALIDATIONS
-// ===============================
+    // ===============================
+    // CATEGORY VALIDATIONS
+    // ===============================
 
-// AUTHENTICATION VALIDATION
+    // AUTHENTICATION VALIDATION
 
-if (category === "AUTHENTICATION") {
-  const forbiddenWords = [
-    "offer",
-    "discount",
-    "sale",
-    "buy",
-    "coupon",
-    "deal",
-    "cashback",
-    "free",
-  ];
+    if (category === "AUTHENTICATION") {
+      const forbiddenWords = [
+        "offer",
+        "discount",
+        "sale",
+        "buy",
+        "coupon",
+        "deal",
+        "cashback",
+        "free",
+      ];
+      if (variableMode === "WITH_VARIABLES" && variables.length > 0) {
+        const missingPreview = variables.some((v) => !previewValues[v]?.trim());
+        if (missingPreview) {
+          setSubmitMessage(
+            "Please fill in all preview values before submitting.",
+          );
+          return;
+        }
+      }
+      const hasMarketingWords = forbiddenWords.some((word) =>
+        body.toLowerCase().includes(word),
+      );
 
-  const hasMarketingWords =
-    forbiddenWords.some((word) =>
-      body.toLowerCase().includes(word)
-    );
+      if (hasMarketingWords) {
+        setSubmitMessage(
+          "Authentication templates cannot contain marketing content.",
+        );
+        return;
+      }
 
-  if (hasMarketingWords) {
-    setSubmitMessage(
-      "Authentication templates cannot contain marketing content."
-    );
-    return;
-  }
+      if (variables.length > 3) {
+        setSubmitMessage(
+          "Authentication templates should use minimal variables.",
+        );
+        return;
+      }
 
-  if (variables.length > 3) {
-    setSubmitMessage(
-      "Authentication templates should use minimal variables."
-    );
-    return;
-  }
+      if (body.trim().length < 20) {
+        setSubmitMessage("Authentication template content is too short.");
+        return;
+      }
+    }
 
-  if (body.trim().length < 20) {
-    setSubmitMessage(
-      "Authentication template content is too short."
-    );
-    return;
-  }
-}
+    // MARKETING VALIDATION
 
-// MARKETING VALIDATION
+    if (category === "MARKETING") {
+      const plainTextLength = body.replace(/{{(.*?)}}/g, "").trim().length;
 
-if (category === "MARKETING") {
-  const plainTextLength =
-    body.replace(/{{(.*?)}}/g, "").trim().length;
+      if (plainTextLength < 25) {
+        setSubmitMessage(
+          "Marketing templates require meaningful promotional content.",
+        );
+        return;
+      }
 
-  if (plainTextLength < 25) {
-    setSubmitMessage(
-      "Marketing templates require meaningful promotional content."
-    );
-    return;
-  }
+      if (variables.length > 5) {
+        setSubmitMessage("Too many variables for a marketing template.");
+        return;
+      }
 
-  if (variables.length > 5) {
-    setSubmitMessage(
-      "Too many variables for a marketing template."
-    );
-    return;
-  }
+      const spamWords = [
+        "free money",
+        "earn now",
+        "winner",
+        "click here",
+        "100% free",
+        "guaranteed profit",
+      ];
 
-  const spamWords = [
-    "free money",
-    "earn now",
-    "winner",
-    "click here",
-    "100% free",
-    "guaranteed profit",
-  ];
+      const hasSpam = spamWords.some((word) =>
+        body.toLowerCase().includes(word),
+      );
 
-  const hasSpam =
-    spamWords.some((word) =>
-      body.toLowerCase().includes(word)
-    );
+      if (hasSpam) {
+        setSubmitMessage(
+          "Marketing template contains restricted promotional wording.",
+        );
+        return;
+      }
+    }
 
-  if (hasSpam) {
-    setSubmitMessage(
-      "Marketing template contains restricted promotional wording."
-    );
-    return;
-  }
-}
+    // UTILITY VALIDATION
 
-// UTILITY VALIDATION
+    if (category === "UTILITY") {
+      if (body.trim().length < 15) {
+        setSubmitMessage(
+          "Utility templates must contain meaningful service information.",
+        );
+        return;
+      }
 
-if (category === "UTILITY") {
-  if (body.trim().length < 15) {
-    setSubmitMessage(
-      "Utility templates must contain meaningful service information."
-    );
-    return;
-  }
+      const marketingWords = [
+        "discount",
+        "offer",
+        "sale",
+        "coupon",
+        "buy now",
+        "limited offer",
+      ];
 
-  const marketingWords = [
-    "discount",
-    "offer",
-    "sale",
-    "coupon",
-    "buy now",
-    "limited offer",
-  ];
+      const hasMarketingContent = marketingWords.some((word) =>
+        body.toLowerCase().includes(word),
+      );
 
-  const hasMarketingContent =
-    marketingWords.some((word) =>
-      body.toLowerCase().includes(word)
-    );
-
-  if (hasMarketingContent) {
-    setSubmitMessage(
-      "Utility templates should not contain promotional content."
-    );
-    return;
-  }
-}
+      if (hasMarketingContent) {
+        setSubmitMessage(
+          "Utility templates should not contain promotional content.",
+        );
+        return;
+      }
+    }
 
     if (!normalizedName) {
       setSubmitMessage("Template name is required.");
@@ -420,8 +389,8 @@ if (category === "UTILITY") {
 
     setTemplateNameError(null);
 
-  
     if (
+      hasVariables &&
       parameterFormat === "POSITIONAL" &&
       variables.some((v) => !/^\d+$/.test(v))
     ) {
@@ -432,6 +401,7 @@ if (category === "UTILITY") {
     }
 
     if (
+      hasVariables &&
       parameterFormat === "NAMED" &&
       variables.length > 0 &&
       variables.every((v) => /^\d+$/.test(v))
@@ -439,6 +409,17 @@ if (category === "UTILITY") {
       const validationMessage =
         "For NAMED templates, placeholders must use names like {{customer_name}}, {{order_id}}.";
       setSubmitMessage(validationMessage);
+      return;
+    }
+
+    if (
+      variableMode === "WITH_VARIABLES" &&
+      variables.length > 0 &&
+      variables.some((v) => !previewValues[v]?.trim())
+    ) {
+      setSubmitMessage(
+        "Please enter sample values for all variables before submitting.",
+      );
       return;
     }
 
@@ -457,23 +438,38 @@ if (category === "UTILITY") {
     }
 
     const components: any[] = [];
+    const headerVariables = Array.from(new Set(extractVariables(header)));
+    const bodyVariables = Array.from(new Set(extractVariables(body)));
+    const footerVariables = Array.from(new Set(extractVariables(footer)));
+    const allVariables = Array.from(
+      new Set([...headerVariables, ...bodyVariables, ...footerVariables]),
+    );
+
+    const bodyExample = [
+      bodyVariables.map((variable) =>
+        previewValues[variable]?.trim() || `sample_${variable}`,
+      ),
+    ];
+
+    const headerExample = headerVariables.length > 0
+      ? headerVariables.map((variable) =>
+          previewValues[variable]?.trim() || `sample_${variable}`,
+        )
+      : undefined;
 
     if (header) {
       components.push({
         type: "HEADER",
         format: "TEXT",
         text: header,
+        ...(headerExample ? { example: { header_handle: headerExample } } : {}),
       });
     }
 
     components.push({
       type: "BODY",
       text: body,
-      example: {
-        body_text: [
-          variables.map((variable) => previewValues[variable] || variable),
-        ],
-      },
+      example: { body_text: bodyExample },
     });
 
     if (footer) {
@@ -493,9 +489,6 @@ if (category === "UTILITY") {
       });
     }
 
-
-
-    
     const actualCreatedBy = createdBy || getUsername() || "USR00002";
 
     const payload = {
@@ -503,9 +496,12 @@ if (category === "UTILITY") {
       name: templateName,
       category,
       language: languages.join(","),
+
       parameterFormat,
+
       components,
-      variables: Object.values(variableNames),
+      variables: allVariables,
+
       createdBy: actualTenantId || actualCreatedBy,
     };
 
@@ -514,7 +510,7 @@ if (category === "UTILITY") {
 
     try {
       const response = await fetch(
-        "https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/create",
+        "http://localhost:5000/templates/v1/create",
         {
           method: "POST",
           headers: {
@@ -543,10 +539,8 @@ if (category === "UTILITY") {
       setTemplateName("");
       setHeader("");
       setBody("");
-      setVariableNames({});
-setPreviewValues({});
-setVariableValues({});
-setIsApplied(false);
+      setPreviewValues({});
+      setVariableValues({});
       setFooter("");
       setButtons([]);
       setCategory("UTILITY");
@@ -567,29 +561,24 @@ setIsApplied(false);
     }
   };
 
-  const getPreviewBody = () => {
-    let preview = body;
+const getPreviewBody = () => {
+  let preview = body;
 
-    Object.entries(variableNames).forEach(([position, variableName]) => {
-      preview = preview.replaceAll(
-        `{{${position}}}`,
-        previewValues[position]
-          ? previewValues[position]
-          : `{{${variableName}}}`,
-      );
+  if (variableMode === "WITH_VARIABLES") {
+    Array.from(new Set(extractVariables(body))).forEach((variable) => {
+      const value = previewValues[variable] || variable;
+      preview = preview.replaceAll(`{{${variable}}}`, value);
     });
+  }
 
-    return preview;
-  };
+  return preview;
+};
 
-useEffect(() => {
-  setIsApplied(false);
-  setVariableNames({});
-  setPreviewValues({});
-}, [body]);
-
-
-
+  useEffect(() => {
+    const variables = extractVariables(body);
+    setHasVariables(variables.length > 0);
+    setPreviewValues({});
+  }, [body]);
 
   return (
     <div className="space-y-6">
@@ -597,92 +586,62 @@ useEffect(() => {
 
       <section className={`rounded-4xl p-6 border ${sectionStyle}`}>
         <div className="flex flex-col xl:flex-row gap-4 mb-6">
+          {/* SEARCH */}
 
-  {/* SEARCH */}
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search templates..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`w-full rounded-2xl border px-5 py-3 text-sm outline-none ${
+                isDark
+                  ? "bg-slate-900 border-slate-700 text-white"
+                  : "bg-white border-slate-200 text-black"
+              }`}
+            />
+          </div>
 
-  <div className="flex-1">
+          {/* CATEGORY */}
 
-    <input
-      type="text"
-      placeholder="Search templates..."
-      value={search}
-      onChange={(e) =>
-        setSearch(
-          e.target.value
-        )
-      }
-      className={`w-full rounded-2xl border px-5 py-3 text-sm outline-none ${
-        isDark
-          ? "bg-slate-900 border-slate-700 text-white"
-          : "bg-white border-slate-200 text-black"
-      }`}
-    />
-  </div>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className={`rounded-2xl border px-5 py-3 text-sm ${
+              isDark
+                ? "bg-slate-900 border-slate-700 text-white"
+                : "bg-white border-slate-200 text-black"
+            }`}
+          >
+            <option value="ALL">All Categories</option>
 
-  {/* CATEGORY */}
+            <option value="UTILITY">Utility</option>
 
-  <select
-    value={categoryFilter}
-    onChange={(e) =>
-      setCategoryFilter(
-        e.target.value
-      )
-    }
-    className={`rounded-2xl border px-5 py-3 text-sm ${
-      isDark
-        ? "bg-slate-900 border-slate-700 text-white"
-        : "bg-white border-slate-200 text-black"
-    }`}
-  >
-    <option value="ALL">
-      All Categories
-    </option>
+            <option value="MARKETING">Marketing</option>
 
-    <option value="UTILITY">
-      Utility
-    </option>
+            <option value="AUTHENTICATION">Authentication</option>
+          </select>
 
-    <option value="MARKETING">
-      Marketing
-    </option>
+          {/* STATUS */}
 
-    <option value="AUTHENTICATION">
-      Authentication
-    </option>
-  </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className={`rounded-2xl border px-5 py-3 text-sm ${
+              isDark
+                ? "bg-slate-900 border-slate-700 text-white"
+                : "bg-white border-slate-200 text-black"
+            }`}
+          >
+            <option value="ALL">All Status</option>
 
-  {/* STATUS */}
+            <option value="PENDING">Pending</option>
 
-  <select
-    value={statusFilter}
-    onChange={(e) =>
-      setStatusFilter(
-        e.target.value
-      )
-    }
-    className={`rounded-2xl border px-5 py-3 text-sm ${
-      isDark
-        ? "bg-slate-900 border-slate-700 text-white"
-        : "bg-white border-slate-200 text-black"
-    }`}
-  >
-    <option value="ALL">
-      All Status
-    </option>
+            <option value="APPROVED">Approved</option>
 
-    <option value="PENDING">
-      Pending
-    </option>
-
-    <option value="APPROVED">
-      Approved
-    </option>
-
-    <option value="REJECTED">
-      Rejected
-    </option>
-  </select>
-</div>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Saved Templates</h2>
@@ -698,8 +657,8 @@ useEffect(() => {
           </button>
         </div>
 
-<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {listLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {listLoading ? (
             <div className="col-span-full rounded-2xl border p-6 text-center text-sm opacity-70">
               Loading templates...
             </div>
@@ -712,449 +671,369 @@ useEffect(() => {
               No saved templates yet. Click "Create Template" to add one.
             </div>
           ) : (
-           filteredTemplates.map((template) => {
-  const bodyComponent =
-    template.components?.find(
-      (c: any) => c.type === "BODY"
-    );
+            filteredTemplates.map((template) => {
+              const bodyComponent = template.components?.find(
+                (c: any) => c.type === "BODY",
+              );
 
-  const headerComponent =
-    template.components?.find(
-      (c: any) => c.type === "HEADER"
-    );
+              const headerComponent = template.components?.find(
+                (c: any) => c.type === "HEADER",
+              );
 
-  const footerComponent =
-    template.components?.find(
-      (c: any) => c.type === "FOOTER"
-    );
+              const footerComponent = template.components?.find(
+                (c: any) => c.type === "FOOTER",
+              );
 
-  return (
-    
-    <div
-      key={template.name}
-      className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-        isDark
-          ? "bg-slate-900 border-slate-700"
-          : "bg-white border-slate-200"
-      }`}
-    >
-     
+              return (
+                <div
+                  key={template.name}
+                  className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+                    isDark
+                      ? "bg-slate-900 border-slate-700"
+                      : "bg-white border-slate-200"
+                  }`}
+                >
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-cyan-400" />
 
+                  <div className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-xl">{template.name}</h3>
 
+                        <div className="flex gap-2 mt-3">
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
+                            {template.category}
+                          </span>
 
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-cyan-400" />
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                            {template.language}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                            {template.status || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-      <div className="p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-bold text-xl">
-              {template.name}
-            </h3>
+                    <div className="mt-5 rounded-2xl bg-slate-50 p-4 border">
+                      {headerComponent?.text && (
+                        <h4 className="font-semibold text-sm">
+                          {headerComponent.text}
+                        </h4>
+                      )}
 
-            <div className="flex gap-2 mt-3">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
-                {template.category}
-              </span>
+                      <p className="mt-3 text-sm text-slate-600 line-clamp-3">
+                        {bodyComponent?.text}
+                      </p>
 
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                {template.language}
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
-                {template.status || "N/A"}
-              </span>
-            </div>
-          </div>
-        </div>
+                      {footerComponent?.text && (
+                        <p className="mt-3 text-xs text-slate-400">
+                          {footerComponent.text}
+                        </p>
+                      )}
+                    </div>
 
-        <div className="mt-5 rounded-2xl bg-slate-50 p-4 border">
-          {headerComponent?.text && (
-            <h4 className="font-semibold text-sm">
-              {headerComponent.text}
-            </h4>
-          )}
-
-          <p className="mt-3 text-sm text-slate-600 line-clamp-3">
-            {bodyComponent?.text}
-          </p>
-
-          {footerComponent?.text && (
-            <p className="mt-3 text-xs text-slate-400">
-              {footerComponent.text}
-            </p>
-          )}
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={() => {
-              setSelectedTemplate(template);
-              setViewOpen(true);
-            }}
-            className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold"
-          >
-            View
-          </button>
-
-        
-          
-        </div>
-      </div>
-    </div>
-  );
-})
+                    <div className="flex gap-3 mt-6">
+                      <button
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setViewOpen(true);
+                        }}
+                        className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </section>
 
+      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* LEFT */}
 
-<div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="bg-[#0084D1] text-white rounded-2xl px-5 py-3 text-sm">
+          Showing{" "}
+          <span className="font-semibold">
+            {(pagination.page - 1) * pagination.limit + 1}
+          </span>{" "}
+          to{" "}
+          <span className="font-semibold">
+            {Math.min(
+              pagination.page * pagination.limit,
 
-  {/* LEFT */}
+              pagination.total,
+            )}
+          </span>{" "}
+          of <span className="font-semibold">{pagination.total}</span>
+        </div>
 
-  <div className="bg-[#0084D1] text-white rounded-2xl px-5 py-3 text-sm">
+        {/* RIGHT */}
 
-    Showing
-    {" "}
+        <div className="flex items-center gap-3">
+          {/* PREVIOUS */}
 
-    <span className="font-semibold">
-      {(pagination.page - 1) *
-        pagination.limit +
-        1}
-    </span>
-
-    {" "}to{" "}
-
-    <span className="font-semibold">
-      {Math.min(
-        pagination.page *
-          pagination.limit,
-
-        pagination.total
-      )}
-    </span>
-
-    {" "}of{" "}
-
-    <span className="font-semibold">
-      {pagination.total}
-    </span>
-  </div>
-
-  {/* RIGHT */}
-
-  <div className="flex items-center gap-3">
-
-    {/* PREVIOUS */}
-
-    <button
-      disabled={
-        pagination.page === 1
-      }
-      onClick={() =>
-        setPagination(
-          (prev) => ({
-            ...prev,
-            page:
-              prev.page - 1,
-          })
-        )
-      }
-      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
-        pagination.page === 1
-          ? "cursor-not-allowed bg-slate-200 text-slate-400"
-          : "bg-slate-800 text-white hover:bg-slate-700"
-      }`}
-    >
-      Previous
-    </button>
-
-    {/* PAGE BUTTONS */}
-
-    <div className="flex items-center gap-2">
-
-      {Array.from({
-        length:
-          pagination.totalPages,
-      }).map((_, index) => {
-
-        const page =
-          index + 1;
-
-        return (
           <button
-            key={page}
+            disabled={pagination.page === 1}
             onClick={() =>
-              setPagination(
-                (prev) => ({
-                  ...prev,
-                  page,
-                })
-              )
+              setPagination((prev) => ({
+                ...prev,
+                page: prev.page - 1,
+              }))
             }
-            className={`h-10 w-10 rounded-xl text-sm font-semibold ${
-              pagination.page ===
-              page
-                ? "bg-sky-500 text-white"
-                : isDark
-                ? "bg-slate-900 text-slate-300"
-                : "bg-slate-100 text-slate-700"
+            className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+              pagination.page === 1
+                ? "cursor-not-allowed bg-slate-200 text-slate-400"
+                : "bg-slate-800 text-white hover:bg-slate-700"
             }`}
           >
-            {page}
+            Previous
           </button>
-        );
-      })}
-    </div>
 
-    {/* NEXT */}
+          {/* PAGE BUTTONS */}
 
-    <button
-      disabled={
-        pagination.page ===
-        pagination.totalPages
-      }
-      onClick={() =>
-        setPagination(
-          (prev) => ({
-            ...prev,
-            page:
-              prev.page + 1,
-          })
-        )
-      }
-      className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
-        pagination.page ===
-        pagination.totalPages
-          ? "cursor-not-allowed bg-slate-200 text-slate-400"
-          : "bg-sky-500 text-white hover:bg-sky-600"
-      }`}
-    >
-      Next
-    </button>
-  </div>
-</div>
+          <div className="flex items-center gap-2">
+            {Array.from({
+              length: pagination.totalPages,
+            }).map((_, index) => {
+              const page = index + 1;
 
-
-{viewOpen && selectedTemplate && (
-  <div className="fixed inset-0 bg-black/60 z-[100] flex justify-center items-center p-5">
-
-    <div className="relative w-full max-w-md">
-
-      <button
-        onClick={() => setViewOpen(false)}
-        className="absolute -top-5 right-0 text-white text-3xl"
-      >
-        ×
-      </button>  
-
-      <div className="p-3 shadow-2xl">
-
-        <div className="bg-[#e5ddd5] rounded-[32px] p-4 min-h-[550px] relative overflow-hidden">
-
-          <div className="absolute inset-0 opacity-5 bg-[url('https://i.imgur.com/7yUvePI.png')]" />
-
-        <div className="relative z-10">
-
-  {/* WHATSAPP TOP HEADER */}
-
- <div className="flex items-center justify-between bg-[#f0f2f5] px-4 py-3 border-b border-[#d1d7db] -mx-4 -mt-4 mb-4 rounded-t-[28px]">
-
-  {/* LEFT */}
-
-  <div className="flex items-center gap-3">
-
-    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-300">
-
-      <img
-        src="https://i.pravatar.cc/100"
-        alt="profile"
-        className="w-full h-full object-cover"
-      />
-    </div>
-
-    <div>
-      <h3 className="text-[15px] font-medium text-[#111b21]">
-        {selectedTemplate.createdBy || "Unknown User"}
-      </h3>
-
-      <p className="text-[12px] text-[#667781]">
-        online
-      </p>
-    </div>
-  </div>
-
-  {/* RIGHT ICONS */}
-
-  <div className="flex items-center gap-5 text-[#54656f]">
-
-    {/* VIDEO */}
-
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-5 h-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"
-      />
-      <rect
-        width="12"
-        height="10"
-        x="3"
-        y="7"
-        rx="2"
-      />
-    </svg>
-
-    {/* SEARCH */}
-
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-5 h-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-
-    {/* MENU */}
-
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-5 h-5"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <circle cx="12" cy="5" r="1.8" />
-      <circle cx="12" cy="12" r="1.8" />
-      <circle cx="12" cy="19" r="1.8" />
-    </svg>
-  </div>
-</div>
-
-  {/* MESSAGE */}
-
-  <div className="flex items-start gap-2">
-
-<div className="max-w-[72%] bg-white rounded-[8px] rounded-tl-none px-3 py-2 shadow-sm relative">
-    {/* HEADER */}
-
-    {selectedTemplate.components?.find(
-      (c: any) => c.type === "HEADER"
-    )?.text && (
-      <h2 className="font-semibold text-[15px] text-[#111b21] mb-2">
-        {
-          selectedTemplate.components.find(
-            (c: any) => c.type === "HEADER"
-          )?.text
-        }
-      </h2>
-    )}
-
-    {/* BODY */}
-
-<div className="text-[14px] leading-6 text-[#111b21] whitespace-pre-line break-words">
-
-  {(
-    selectedTemplate.components.find(
-      (c: any) => c.type === "BODY"
-    )?.text || ""
-  )
-    .split(/(\{\{\d+\}\})/g)
-    .map((part: string, index: number) => {
-
-      const match =
-        part.match(/\{\{(\d+)\}\}/);
-
-      if (match) {
-
-        const variableNumber =
-          match[1];
-
-        const variableName =
-          selectedTemplate.variables?.[
-            Number(variableNumber) - 1
-          ];
-
-        return (
-          <button
-            key={index}
-            className="inline-flex items-center gap-1 bg-[#e7f3ff] text-[#027eb5] px-2 py-[2px] rounded-md text-[12px] font-medium mx-[2px] hover:bg-[#d8ecff] transition"
-          >
-            {previewValues[variableNumber] ||
-              variableName ||
-              `{{${variableNumber}}}`}
-          </button>
-        );
-      }
-
-      return (
-        <span key={index}>
-          {part}
-        </span>
-      );
-    })}
-</div>
-
-    {/* FOOTER */}
-
-    {selectedTemplate.components?.find(
-      (c: any) => c.type === "FOOTER"
-    )?.text && (
-      <p className="text-[12px] text-[#667781] mt-3">
-        {
-          selectedTemplate.components.find(
-            (c: any) => c.type === "FOOTER"
-          )?.text
-        }
-      </p>
-    )}
-
-    {/* BUTTONS */}
-
-    <div className="mt-4 border-t border-[#e9edef] pt-2 space-y-2">
-      {selectedTemplate.components
-        ?.find(
-          (c: any) => c.type === "BUTTONS"
-        )
-        ?.buttons?.map(
-          (btn: any, index: number) => (
-            <button
-              key={index}
-              className="w-full text-center text-[#00a884] text-[14px] font-medium py-2 hover:bg-[#f5f6f6] rounded-lg transition"
-            >
-              {btn.text}
-            </button>
-          )
-        )}
-    </div>
-
-    {/* TIME */}
-
-    <div className="flex justify-end items-center mt-1">
-      <span className="text-[11px] text-[#667781]">
-        12:45 PM
-      </span>
-    </div>
-
-    {/* MESSAGE TAIL */}
-
-    <div className="absolute top-0 -left-2 w-3 h-3 bg-white clip-tail" />
-  </div>
-</div>
+              return (
+                <button
+                  key={page}
+                  onClick={() =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      page,
+                    }))
+                  }
+                  className={`h-10 w-10 rounded-xl text-sm font-semibold ${
+                    pagination.page === page
+                      ? "bg-sky-500 text-white"
+                      : isDark
+                        ? "bg-slate-900 text-slate-300"
+                        : "bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
           </div>
+
+          {/* NEXT */}
+
+          <button
+            disabled={pagination.page === pagination.totalPages}
+            onClick={() =>
+              setPagination((prev) => ({
+                ...prev,
+                page: prev.page + 1,
+              }))
+            }
+            className={`rounded-2xl px-5 py-2.5 text-sm font-medium ${
+              pagination.page === pagination.totalPages
+                ? "cursor-not-allowed bg-slate-200 text-slate-400"
+                : "bg-sky-500 text-white hover:bg-sky-600"
+            }`}
+          >
+            Next
+          </button>
         </div>
       </div>
-    </div>
-  </div>
-)}
+
+      {viewOpen && selectedTemplate && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex justify-center items-center p-5">
+          <div className="relative w-full max-w-md">
+            <button
+              onClick={() => setViewOpen(false)}
+              className="absolute -top-5 right-0 text-white text-3xl"
+            >
+              ×
+            </button>
+
+            <div className="p-3 shadow-2xl">
+              <div className="bg-[#e5ddd5] rounded-[32px] p-4 min-h-[550px] relative overflow-hidden">
+                <div className="absolute inset-0 opacity-5 bg-[url('https://i.imgur.com/7yUvePI.png')]" />
+
+                <div className="relative z-10">
+                  {/* WHATSAPP TOP HEADER */}
+
+                  <div className="flex items-center justify-between bg-[#f0f2f5] px-4 py-3 border-b border-[#d1d7db] -mx-4 -mt-4 mb-4 rounded-t-[28px]">
+                    {/* LEFT */}
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-300">
+                        <img
+                          src="https://i.pravatar.cc/100"
+                          alt="profile"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div>
+                        <h3 className="text-[15px] font-medium text-[#111b21]">
+                          {selectedTemplate.createdBy || "Unknown User"}
+                        </h3>
+
+                        <p className="text-[12px] text-[#667781]">online</p>
+                      </div>
+                    </div>
+
+                    {/* RIGHT ICONS */}
+
+                    <div className="flex items-center gap-5 text-[#54656f]">
+                      {/* VIDEO */}
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"
+                        />
+                        <rect width="12" height="10" x="3" y="7" rx="2" />
+                      </svg>
+
+                      {/* SEARCH */}
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+
+                      {/* MENU */}
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle cx="12" cy="5" r="1.8" />
+                        <circle cx="12" cy="12" r="1.8" />
+                        <circle cx="12" cy="19" r="1.8" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* MESSAGE */}
+
+                  <div className="flex items-start gap-2">
+                    <div className="max-w-[72%] bg-white rounded-[8px] rounded-tl-none px-3 py-2 shadow-sm relative">
+                      {/* HEADER */}
+
+                      {selectedTemplate.components?.find(
+                        (c: any) => c.type === "HEADER",
+                      )?.text && (
+                        <h2 className="font-semibold text-[15px] text-[#111b21] mb-2">
+                          {
+                            selectedTemplate.components.find(
+                              (c: any) => c.type === "HEADER",
+                            )?.text
+                          }
+                        </h2>
+                      )}
+
+                      {/* BODY */}
+
+                      <div className="text-[14px] leading-6 text-[#111b21] whitespace-pre-line break-words">
+                        {(
+                          selectedTemplate.components.find(
+                            (c: any) => c.type === "BODY",
+                          )?.text || ""
+                        )
+                          .split(/(\{\{\d+\}\})/g)
+                          .map((part: string, index: number) => {
+                            const match = part.match(/\{\{(\d+)\}\}/);
+
+                            if (match) {
+                              const variableNumber = match[1];
+
+                              const variableName =
+                                selectedTemplate.variables?.[
+                                  Number(variableNumber) - 1
+                                ];
+
+                              return (
+                                <button
+                                  key={index}
+                                  className="inline-flex items-center gap-1 bg-[#e7f3ff] text-[#027eb5] px-2 py-[2px] rounded-md text-[12px] font-medium mx-[2px] hover:bg-[#d8ecff] transition"
+                                >
+                                  {previewValues[variableNumber] ||
+                                    variableName ||
+                                    `{{${variableNumber}}}`}
+                                </button>
+                              );
+                            }
+
+                            return <span key={index}>{part}</span>;
+                          })}
+                      </div>
+
+                      {/* FOOTER */}
+
+                      {selectedTemplate.components?.find(
+                        (c: any) => c.type === "FOOTER",
+                      )?.text && (
+                        <p className="text-[12px] text-[#667781] mt-3">
+                          {
+                            selectedTemplate.components.find(
+                              (c: any) => c.type === "FOOTER",
+                            )?.text
+                          }
+                        </p>
+                      )}
+
+                      {/* BUTTONS */}
+
+                      <div className="mt-4 border-t border-[#e9edef] pt-2 space-y-2">
+                        {selectedTemplate.components
+                          ?.find((c: any) => c.type === "BUTTONS")
+                          ?.buttons?.map((btn: any, index: number) => (
+                            <button
+                              key={index}
+                              className="w-full text-center text-[#00a884] text-[14px] font-medium py-2 hover:bg-[#f5f6f6] rounded-lg transition"
+                            >
+                              {btn.text}
+                            </button>
+                          ))}
+                      </div>
+
+                      {/* TIME */}
+
+                      <div className="flex justify-end items-center mt-1">
+                        <span className="text-[11px] text-[#667781]">
+                          12:45 PM
+                        </span>
+                      </div>
+
+                      {/* MESSAGE TAIL */}
+
+                      <div className="absolute top-0 -left-2 w-3 h-3 bg-white clip-tail" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* POPUP */}
 
@@ -1204,6 +1083,44 @@ useEffect(() => {
                   </p>
                 )}
 
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Template Type</label>
+
+                  <div className="flex items-center gap-3">
+                    {/* WITHOUT */}
+
+                    <button
+                      type="button"
+                      onClick={() => setVariableMode("WITHOUT_VARIABLES")}
+                      className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
+                        variableMode === "WITHOUT_VARIABLES"
+                          ? "bg-sky-500 text-white"
+                          : isDark
+                            ? "bg-slate-900 text-slate-300"
+                            : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      Without Variables
+                    </button>
+
+                    {/* WITH */}
+
+                    <button
+                      type="button"
+                      onClick={() => setVariableMode("WITH_VARIABLES")}
+                      className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
+                        variableMode === "WITH_VARIABLES"
+                          ? "bg-violet-500 text-white"
+                          : isDark
+                            ? "bg-slate-900 text-slate-300"
+                            : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      With Variables
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <select
                     value={category}
@@ -1225,15 +1142,18 @@ useEffect(() => {
                     className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
                   >
                     <option value="POSITIONAL">POSITIONAL</option>
+
                     <option value="NAMED">NAMED</option>
                   </select>
                 </div>
 
-                <p className="text-sm text-slate-500 mt-2">
-                  {parameterFormat === "POSITIONAL"
-                    ? "Use {{1}}, {{2}}, ... in body and send variables as numeric indexes."
-                    : "Use named placeholders like {{customer_name}}, {{order_id}} in body and send variables by name."}
-                </p>
+                {variableMode === "WITH_VARIABLES" && (
+                  <p className="text-sm text-slate-500 mt-2">
+                    {parameterFormat === "POSITIONAL"
+                      ? "Use {{1}}, {{2}} format."
+                      : "Use {{customer_name}}, {{order_id}} format."}
+                  </p>
+                )}
 
                 <div className="space-y-3 mt-4">
                   <div className="flex items-center gap-3">
@@ -1310,87 +1230,32 @@ useEffect(() => {
                   className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
                 />
 
-                {/* VARIABLE MAPPING */}
-
-                {extractVariables(body).length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Variable Mapping</h3>
-
-                    {extractVariables(body).map((variable) => (
-                      <div key={variable} className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          value={`{{${variable}}}`}
-                          readOnly
-                          className={`border rounded-xl px-4 py-3 ${inputStyle}`}
-                        />
-
-                        <input
-                          type="text"
-                          placeholder="Enter variable name"
-                          value={variableNames[variable] || ""}
-                          onChange={(e) =>
-                            setVariableNames({
-                              ...variableNames,
-                              [variable]: e.target.value,
-                            })
-                          }
-                          className={`border rounded-xl px-4 py-3 ${inputStyle}`}
-                        />
-                      </div>
-                    ))}
-
-                    <button
-                      type="button"
-onClick={() => {
-  const hasEmpty =
-    Object.values(variableNames).some(
-      (item) => !item.trim()
-    );
-
-  if (hasEmpty) {
-    setSubmitMessage(
-      "Please enter all variable names."
-    );
-    return;
-  }
-
-  setSubmitMessage(null);
-  setIsApplied(true);
-}}                      className="bg-green-600 text-white px-5 py-3 rounded-xl"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-
                 {/* PREVIEW VALUES */}
 
-                {isApplied && (
-                  <div className="space-y-4 mt-5">
-                    <h3 className="font-semibold">Preview Values</h3>
+                {variableMode === "WITH_VARIABLES" &&
+                  Array.from(new Set(extractVariables(body))).length > 0 && (
+                    <div className="space-y-4 mt-5">
+                      <h3 className="font-semibold">Preview Values</h3>
 
-                    {Object.entries(variableNames).map(
-                      ([position, variableName]) => (
-                        <input
-                          key={position}
-                          type="text"
-                          placeholder={variableName}
-                          value={previewValues[position] || ""}
-                          onChange={(e) =>
-                            setPreviewValues({
-                              ...previewValues,
-                              [position]: e.target.value,
-                            })
-                          }
-                          className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                        />
-                      ),
-                    )}
-                  </div>
-                )}
-
-
+                      {Array.from(new Set(extractVariables(body))).map(
+                        (variable) => (
+                          <input
+                            key={variable}
+                            type="text"
+                            placeholder={`Sample value for {{${variable}}}`}
+                            value={previewValues[variable] || ""}
+                            onChange={(e) =>
+                              setPreviewValues({
+                                ...previewValues,
+                                [variable]: e.target.value,
+                              })
+                            }
+                            className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+                          />
+                        ),
+                      )}
+                    </div>
+                  )}
 
                 <input
                   type="text"
