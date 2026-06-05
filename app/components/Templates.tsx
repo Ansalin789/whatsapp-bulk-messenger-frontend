@@ -125,7 +125,7 @@ export function Templates({ isDark }: TemplatesProps) {
   const [variableMode, setVariableMode] = useState<
     "WITH_VARIABLES" | "WITHOUT_VARIABLES"
   >("WITHOUT_VARIABLES");
-const [mediaType, setMediaType] = useState<string>("");
+  const [mediaType, setMediaType] = useState<string>("");
   const [buttons, setButtons] = useState<string[]>([]);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
@@ -285,24 +285,18 @@ const [mediaType, setMediaType] = useState<string>("");
     const token = getAccessToken();
     const formData = new FormData();
     formData.append("file", file);
-formData.append("mediaType", mediaType);
+    formData.append("mediaType", mediaType);
 
-for (let pair of formData.entries()) {
-  console.log(pair[0], pair[1]);
-}
-const tenant = tenantId || getUserId() || "USR00002";
+    const tenant = tenantId || getUserId() || "USR00002";
 
-if (!tenant) {
-  setMediaError("Tenant ID missing");
-  setMediaLoading(false);
-  return;
-}
-
-formData.append("tenantId", tenant);
-    console.log("handleMediaUpload form values", { mediaType, tenant, hasToken: !!token });
-    if (tenant) {
-      formData.append("tenantId", tenant);
+    if (!tenant) {
+      setMediaError("Tenant ID missing");
+      setMediaLoading(false);
+      return;
     }
+
+    formData.append("tenantId", tenant);
+    console.log("handleMediaUpload form values", { mediaType, tenant, hasToken: !!token });
 
     try {
       const response = await fetch(
@@ -332,19 +326,23 @@ formData.append("tenantId", tenant);
       const data = await response.json();
       console.log("Media upload response:", data);
 
-      if (data.data?._id) {
-        console.log("handleMediaUpload got mediaId from data.data", data.data.mediaId);
-        setMediaId(data.data._id);
-        setUploadedFileName(file.name);
-        setMediaError(null);
-      } else if (data._id) {
-        console.log("handleMediaUpload got mediaId from data", data.mediaId);
-        setMediaId(data._id);
+      const uploadedMediaId =
+        data?.data?.id ||
+        data?.data?._id ||
+        data?.data?.mediaId ||
+        data?.id ||
+        data?._id ||
+        data?.mediaId;
+
+      console.log("UPLOADED MEDIA ID", uploadedMediaId, { raw: data });
+
+      if (uploadedMediaId) {
+        setMediaId(uploadedMediaId);
         setUploadedFileName(file.name);
         setMediaError(null);
       } else {
-        console.log("handleMediaUpload error: no mediaId in response");
-        throw new Error("No mediaId received from server");
+        console.log("handleMediaUpload: no media id found in response", data);
+        setMediaError("No media id received");
       }
     } catch (error) {
       console.error("Media upload error:", error);
@@ -361,6 +359,10 @@ formData.append("tenantId", tenant);
 
     return matches.map((item) => item.replace(/[{}]/g, ""));
   };
+
+  const bodyPlaceholders = Array.from(new Set(extractVariables(body)));
+  const showNoVariableWarning =
+    variableMode === "WITHOUT_VARIABLES" && bodyPlaceholders.length > 0;
 
   const handleSave = async () => {
     console.log("handleSave called", {
@@ -380,6 +382,18 @@ formData.append("tenantId", tenant);
     const normalizedName = templateName.trim();
     const validNamePattern = /^[a-z0-9_]+$/;
     const variables = extractVariables(body);
+    const hasBodyVariables = variables.length > 0;
+
+    if (variableMode === "WITHOUT_VARIABLES" && hasBodyVariables) {
+      console.log("handleSave validation failed: body contains placeholders while in WITHOUT_VARIABLES mode", {
+        variables,
+      });
+      setSubmitMessage(
+        "Remove placeholders from the body or switch to With Variables.",
+      );
+      return;
+    }
+
     // ===============================
     // CATEGORY VALIDATIONS
     // ===============================
@@ -582,18 +596,21 @@ formData.append("tenantId", tenant);
     }
 
     const components: any[] = [];
-    const headerVariables = Array.from(new Set(extractVariables(header)));
-    const bodyVariables = Array.from(new Set(extractVariables(body)));
-    const footerVariables = Array.from(new Set(extractVariables(footer)));
+    const headerVariables =
+      variableMode === "WITH_VARIABLES"
+        ? Array.from(new Set(extractVariables(header)))
+        : [];
+    const bodyVariables =
+      variableMode === "WITH_VARIABLES"
+        ? Array.from(new Set(extractVariables(body)))
+        : [];
+    const footerVariables =
+      variableMode === "WITH_VARIABLES"
+        ? Array.from(new Set(extractVariables(footer)))
+        : [];
     const allVariables = Array.from(
       new Set([...headerVariables, ...bodyVariables, ...footerVariables]),
     );
-
-    const bodyExample = [
-      bodyVariables.map((variable) =>
-        previewValues[variable]?.trim() || `sample_${variable}`,
-      ),
-    ];
 
     const headerExample = headerVariables.length > 0
       ? headerVariables.map((variable) =>
@@ -601,20 +618,19 @@ formData.append("tenantId", tenant);
         )
       : undefined;
 
-   if (mediaType === "TEXT" && header) {
+const needsMediaHeader =
+  mediaType === "IMAGE" ||
+  mediaType === "VIDEO" ||
+  mediaType === "DOCUMENT";
+
+if (mediaType === "TEXT" && header.trim()) {
   components.push({
     type: "HEADER",
     format: "TEXT",
     text: header,
   });
 }
-
-if (
-  (mediaType === "IMAGE" ||
-    mediaType === "VIDEO" ||
-    mediaType === "DOCUMENT") &&
-  mediaId
-) {
+if (needsMediaHeader && mediaId) {
   components.push({
     type: "HEADER",
     format: mediaType,
@@ -624,32 +640,35 @@ if (
   });
 }
 
-   if (parameterFormat === "POSITIONAL") {
-  components.push({
-    type: "BODY",
-    text: body,
-    example: {
-      body_text: [
-        bodyVariables.map(
-          (variable) =>
-            previewValues[variable]?.trim() || `sample_${variable}`,
-        ),
-      ],
-    },
-  });
-} else {
-  components.push({
-    type: "BODY",
-    text: body,
-    example: {
-      body_text_named_params: bodyVariables.map((variable) => ({
-        param_name: variable,
-        example:
-          previewValues[variable]?.trim() || `sample_${variable}`,
-      })),
-    },
-  });
-}
+
+
+    const bodyComponent: any = {
+      type: "BODY",
+      text: body,
+    };
+
+    if (variableMode === "WITH_VARIABLES" && bodyVariables.length > 0) {
+      if (parameterFormat === "POSITIONAL") {
+        bodyComponent.example = {
+          body_text: [
+            bodyVariables.map(
+              (variable) =>
+                previewValues[variable]?.trim() || `sample_${variable}`,
+            ),
+          ],
+        };
+      } else {
+        bodyComponent.example = {
+          body_text_named_params: bodyVariables.map((variable) => ({
+            param_name: variable,
+            example:
+              previewValues[variable]?.trim() || `sample_${variable}`,
+          })),
+        };
+      }
+    }
+
+    components.push(bodyComponent);
 
     if (footer) {
       components.push({
@@ -661,34 +680,48 @@ if (
     if (buttons.length > 0) {
       components.push({
         type: "BUTTONS",
-        buttons: buttons.map((btn) => ({
-          type: "QUICK_REPLY",
+buttons: buttons.map((btn) => ({          type: "QUICK_REPLY",
           text: btn,
         })),
       });
     }
 
     const actualCreatedBy = createdBy || getUsername() || "USR00002";
-
+console.log("CURRENT MEDIA ID", mediaId);
+if (
+  (mediaType === "IMAGE" ||
+    mediaType === "VIDEO" ||
+    mediaType === "DOCUMENT") &&
+  uploadedFileName &&
+  !mediaId
+) {
+  setSubmitMessage("Please upload media first.");
+  return;
+}
     const payload: any = {
+      
       tenantId: actualTenantId,
       name: templateName,
       category,
       language: languages.join(","),
-
-      parameterFormat,
-
       components,
       variables: allVariables,
-
       createdBy: actualTenantId || actualCreatedBy,
     };
+
+   payload.parameterFormat = parameterFormat;
+
     console.log("handleSave payload", payload);
 
     // Add mediaId if available
-    if (mediaId) {
-      payload.mediaId = mediaId;
-    }
+const needsMedia =
+  mediaType === "IMAGE" ||
+  mediaType === "VIDEO" ||
+  mediaType === "DOCUMENT";
+
+if (needsMedia && mediaId) {
+  payload.mediaId = mediaId;
+}
 
     console.log(payload);
     const token = getAccessToken();
@@ -730,6 +763,9 @@ if (
       setVariableValues({});
       setFooter("");
       setButtons([]);
+      setMediaId("");
+setUploadedFileName("");
+setMediaType("");
       setCategory("UTILITY");
       setLanguages(["en_US"]);
       setLanguageOption("en_US");
@@ -1406,7 +1442,12 @@ return (
 
                 <select
   value={mediaType}
-  onChange={(e) => setMediaType(e.target.value)}
+onChange={(e) => {
+  setMediaType(e.target.value);
+  setMediaId("");
+  setUploadedFileName("");
+  setMediaError(null);
+}}
   className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
 >
   <option value="">Select Header Type</option>
@@ -1471,6 +1512,13 @@ return (
                   onChange={(e) => setBody(e.target.value)}
                   className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
                 />
+
+                {showNoVariableWarning && (
+                  <p className="text-sm text-amber-500 mt-2">
+                    You selected "Without Variables", but the body contains
+                    placeholders. Remove them or switch to "With Variables".
+                  </p>
+                )}
 
                 {/* PREVIEW VALUES */}
 
