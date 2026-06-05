@@ -125,12 +125,16 @@ export function Templates({ isDark }: TemplatesProps) {
   const [variableMode, setVariableMode] = useState<
     "WITH_VARIABLES" | "WITHOUT_VARIABLES"
   >("WITHOUT_VARIABLES");
-
+const [mediaType, setMediaType] = useState<string>("");
   const [buttons, setButtons] = useState<string[]>([]);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
+  const [mediaId, setMediaId] = useState<string>("");
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -163,6 +167,15 @@ export function Templates({ isDark }: TemplatesProps) {
     : "bg-white border-slate-300 text-black";
 
   const fetchTemplates = async () => {
+    console.log("fetchTemplates called", {
+      tenantId,
+      createdBy,
+      page: pagination.page,
+      limit: pagination.limit,
+      categoryFilter,
+      statusFilter,
+      search,
+    });
     setListLoading(true);
     setListError(null);
 
@@ -190,6 +203,7 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       const resData = await response.json();
+      console.log("fetchTemplates response data", resData);
       let list: any[] = [];
 
       if (resData && resData.success) {
@@ -241,8 +255,106 @@ export function Templates({ isDark }: TemplatesProps) {
   }, [createdBy, tenantId]);
 
   useEffect(() => {
+    console.log("useEffect fetchTemplates dependency change", {
+      tenantId,
+      createdBy,
+      page: pagination.page,
+    });
     fetchTemplates();
   }, [tenantId, createdBy, pagination.page]);
+
+  const handleMediaUpload = async (file: File) => {
+    console.log("handleMediaUpload called", {
+      fileName: file?.name,
+      fileType: file?.type,
+      fileSize: file?.size,
+      mediaType,
+      currentMediaId: mediaId,
+      tenantId,
+    });
+    if (!file) return;
+    if (!mediaType) {
+      console.log("handleMediaUpload error: missing mediaType");
+      setMediaError("Please select a media type first");
+      return;
+    }
+
+    setMediaLoading(true);
+    setMediaError(null);
+
+    const token = getAccessToken();
+    const formData = new FormData();
+    formData.append("file", file);
+formData.append("mediaType", mediaType);
+
+for (let pair of formData.entries()) {
+  console.log(pair[0], pair[1]);
+}
+const tenant = tenantId || getUserId() || "USR00002";
+
+if (!tenant) {
+  setMediaError("Tenant ID missing");
+  setMediaLoading(false);
+  return;
+}
+
+formData.append("tenantId", tenant);
+    console.log("handleMediaUpload form values", { mediaType, tenant, hasToken: !!token });
+    if (tenant) {
+      formData.append("tenantId", tenant);
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/templatemedia/v1/upload",
+        {
+          method: "POST",
+          headers: {  
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: formData,
+        },
+      );
+      console.log("handleMediaUpload response status", response.status, response.statusText);
+
+      if (!response.ok) {
+        let errorMessage = "Failed to upload media";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // ignore parse error
+        }
+        console.log("handleMediaUpload failed", errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log("Media upload response:", data);
+
+      if (data.data?._id) {
+        console.log("handleMediaUpload got mediaId from data.data", data.data.mediaId);
+        setMediaId(data.data._id);
+        setUploadedFileName(file.name);
+        setMediaError(null);
+      } else if (data._id) {
+        console.log("handleMediaUpload got mediaId from data", data.mediaId);
+        setMediaId(data._id);
+        setUploadedFileName(file.name);
+        setMediaError(null);
+      } else {
+        console.log("handleMediaUpload error: no mediaId in response");
+        throw new Error("No mediaId received from server");
+      }
+    } catch (error) {
+      console.error("Media upload error:", error);
+      setMediaError(
+        error instanceof Error ? error.message : "Failed to upload media",
+      );
+    } finally {
+      setMediaLoading(false);
+    }
+  };
 
   const extractVariables = (text: string) => {
     const matches = text.match(/{{(.*?)}}/g) || [];
@@ -251,6 +363,20 @@ export function Templates({ isDark }: TemplatesProps) {
   };
 
   const handleSave = async () => {
+    console.log("handleSave called", {
+      templateName,
+      category,
+      parameterFormat,
+      variableMode,
+      hasVariables,
+      mediaType,
+      mediaId,
+      languages,
+      footer,
+      buttons,
+      body,
+      header,
+    });
     const normalizedName = templateName.trim();
     const validNamePattern = /^[a-z0-9_]+$/;
     const variables = extractVariables(body);
@@ -274,6 +400,7 @@ export function Templates({ isDark }: TemplatesProps) {
       if (variableMode === "WITH_VARIABLES" && variables.length > 0) {
         const missingPreview = variables.some((v) => !previewValues[v]?.trim());
         if (missingPreview) {
+          console.log("handleSave validation failed: missing preview values", { variables, previewValues });
           setSubmitMessage(
             "Please fill in all preview values before submitting.",
           );
@@ -285,6 +412,7 @@ export function Templates({ isDark }: TemplatesProps) {
       );
 
       if (hasMarketingWords) {
+        console.log("handleSave validation failed: authentication contains marketing words", { body });
         setSubmitMessage(
           "Authentication templates cannot contain marketing content.",
         );
@@ -292,6 +420,7 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       if (variables.length > 3) {
+        console.log("handleSave validation failed: too many authentication variables", { variables });
         setSubmitMessage(
           "Authentication templates should use minimal variables.",
         );
@@ -299,6 +428,7 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       if (body.trim().length < 20) {
+        console.log("handleSave validation failed: authentication body too short", { bodyLength: body.trim().length });
         setSubmitMessage("Authentication template content is too short.");
         return;
       }
@@ -310,6 +440,7 @@ export function Templates({ isDark }: TemplatesProps) {
       const plainTextLength = body.replace(/{{(.*?)}}/g, "").trim().length;
 
       if (plainTextLength < 25) {
+        console.log("handleSave validation failed: marketing body too short", { plainTextLength });
         setSubmitMessage(
           "Marketing templates require meaningful promotional content.",
         );
@@ -317,6 +448,7 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       if (variables.length > 5) {
+        console.log("handleSave validation failed: too many marketing variables", { variables });
         setSubmitMessage("Too many variables for a marketing template.");
         return;
       }
@@ -335,6 +467,7 @@ export function Templates({ isDark }: TemplatesProps) {
       );
 
       if (hasSpam) {
+        console.log("handleSave validation failed: marketing spam words", { body });
         setSubmitMessage(
           "Marketing template contains restricted promotional wording.",
         );
@@ -346,6 +479,7 @@ export function Templates({ isDark }: TemplatesProps) {
 
     if (category === "UTILITY") {
       if (body.trim().length < 15) {
+        console.log("handleSave validation failed: utility body too short", { bodyLength: body.trim().length });
         setSubmitMessage(
           "Utility templates must contain meaningful service information.",
         );
@@ -366,6 +500,7 @@ export function Templates({ isDark }: TemplatesProps) {
       );
 
       if (hasMarketingContent) {
+        console.log("handleSave validation failed: utility contains promotional content", { body });
         setSubmitMessage(
           "Utility templates should not contain promotional content.",
         );
@@ -374,6 +509,7 @@ export function Templates({ isDark }: TemplatesProps) {
     }
 
     if (!normalizedName) {
+      console.log("handleSave validation failed: missing templateName");
       setSubmitMessage("Template name is required.");
       setTemplateNameError("Template name is required.");
       return;
@@ -382,6 +518,7 @@ export function Templates({ isDark }: TemplatesProps) {
     if (!validNamePattern.test(normalizedName)) {
       const validationMessage =
         "Template name must contain only lowercase letters, numbers, and underscores.";
+      console.log("handleSave validation failed: invalid templateName", { normalizedName });
       setSubmitMessage(validationMessage);
       setTemplateNameError(validationMessage);
       return;
@@ -396,6 +533,7 @@ export function Templates({ isDark }: TemplatesProps) {
     ) {
       const validationMessage =
         "For POSITIONAL templates, placeholders must use numeric indexes like {{1}}, {{2}}.";
+      console.log("handleSave validation failed: positional variables invalid", { variables });
       setSubmitMessage(validationMessage);
       return;
     }
@@ -405,6 +543,7 @@ export function Templates({ isDark }: TemplatesProps) {
   parameterFormat === "NAMED" &&
   variables.some((v) => /^\d+$/.test(v))
 ) {
+  console.log("handleSave validation failed: named variables invalid", { variables });
   setSubmitMessage(
     "For NAMED templates, placeholders must use names like {{customer_name}}.",
   );
@@ -416,6 +555,10 @@ export function Templates({ isDark }: TemplatesProps) {
       variables.length > 0 &&
       variables.some((v) => !previewValues[v]?.trim())
     ) {
+      console.log("handleSave validation failed: missing preview values before submit", {
+        variables,
+        previewValues,
+      });
       setSubmitMessage(
         "Please enter sample values for all variables before submitting.",
       );
@@ -423,6 +566,7 @@ export function Templates({ isDark }: TemplatesProps) {
     }
 
     if (languages.length === 0) {
+      console.log("handleSave validation failed: no languages selected");
       setSubmitMessage("Please select at least one language.");
       return;
     }
@@ -430,6 +574,7 @@ export function Templates({ isDark }: TemplatesProps) {
     const actualTenantId = getUserId() || "USR00002";
 
     if (!actualTenantId) {
+      console.log("handleSave failed: missing actualTenantId", { currentTenantId: actualTenantId });
       setSubmitMessage(
         "Unable to determine tenant ID from the logged-in user.",
       );
@@ -456,14 +601,28 @@ export function Templates({ isDark }: TemplatesProps) {
         )
       : undefined;
 
-    if (header) {
-      components.push({
-        type: "HEADER",
-        format: "TEXT",
-        text: header,
-        ...(headerExample ? { example: { header_handle: headerExample } } : {}),
-      });
-    }
+   if (mediaType === "TEXT" && header) {
+  components.push({
+    type: "HEADER",
+    format: "TEXT",
+    text: header,
+  });
+}
+
+if (
+  (mediaType === "IMAGE" ||
+    mediaType === "VIDEO" ||
+    mediaType === "DOCUMENT") &&
+  mediaId
+) {
+  components.push({
+    type: "HEADER",
+    format: mediaType,
+    example: {
+      header_handle: [mediaId],
+    },
+  });
+}
 
    if (parameterFormat === "POSITIONAL") {
   components.push({
@@ -511,7 +670,7 @@ export function Templates({ isDark }: TemplatesProps) {
 
     const actualCreatedBy = createdBy || getUsername() || "USR00002";
 
-    const payload = {
+    const payload: any = {
       tenantId: actualTenantId,
       name: templateName,
       category,
@@ -524,11 +683,18 @@ export function Templates({ isDark }: TemplatesProps) {
 
       createdBy: actualTenantId || actualCreatedBy,
     };
+    console.log("handleSave payload", payload);
+
+    // Add mediaId if available
+    if (mediaId) {
+      payload.mediaId = mediaId;
+    }
 
     console.log(payload);
     const token = getAccessToken();
 
     try {
+      console.log("handleSave sending create request", { payload });
       const response = await fetch(
         "http://localhost:5000/templates/v1/create",
         {
@@ -541,6 +707,7 @@ export function Templates({ isDark }: TemplatesProps) {
         },
       );
 
+      console.log("handleSave create response status", response.status, response.statusText);
       if (!response.ok) {
         let errorMessage = `Failed to create template (${response.status})`;
         try {
@@ -553,7 +720,7 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       const data = await response.json();
-      console.log(data);
+      console.log("handleSave create success response", data);
 
       setSubmitMessage("Template created successfully.");
       setTemplateName("");
@@ -583,6 +750,7 @@ export function Templates({ isDark }: TemplatesProps) {
 
 const getPreviewBody = () => {
   let preview = body;
+  console.log("getPreviewBody called", { body, previewValues, variableMode });
 
   if (variableMode === "WITH_VARIABLES") {
     Array.from(new Set(extractVariables(body))).forEach((variable) => {
@@ -591,16 +759,18 @@ const getPreviewBody = () => {
     });
   }
 
+  console.log("getPreviewBody result", preview);
   return preview;
 };
 
-  useEffect(() => {
-    const variables = extractVariables(body);
-    setHasVariables(variables.length > 0);
-    setPreviewValues({});
-  }, [body]);
+useEffect(() => {
+  const variables = extractVariables(body);
+  console.log("body changed, extracted variables", { body, variables });
+  setHasVariables(variables.length > 0);
+  setPreviewValues({});
+}, [body]);
 
-  return (
+return (
     <div className="space-y-6">
       {/* TOP SECTION */}
 
@@ -1234,13 +1404,65 @@ const getPreviewBody = () => {
                   className={`w-full border rounded-xl px-4 py-3 ${inputStyle} opacity-80 mt-4`}
                 />
 
-                <input
-                  type="text"
-                  placeholder="Header"
-                  value={header}
-                  onChange={(e) => setHeader(e.target.value)}
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                />
+                <select
+  value={mediaType}
+  onChange={(e) => setMediaType(e.target.value)}
+  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+>
+  <option value="">Select Header Type</option>
+
+  <option value="TEXT">TEXT</option>
+
+  <option value="IMAGE">IMAGE</option>
+
+  <option value="DOCUMENT">DOCUMENT</option>
+
+  <option value="VIDEO">VIDEO</option>
+</select>
+
+{mediaType === "TEXT" && (
+  <input
+    type="text"
+    placeholder="Header"
+    value={header}
+    onChange={(e) => setHeader(e.target.value)}
+    className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+  />
+)}
+
+{(mediaType === "IMAGE" || mediaType === "VIDEO" || mediaType === "DOCUMENT") && (
+  <div className="space-y-3">
+    <input
+      type="file"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+
+        if (file) {
+          handleMediaUpload(file);
+        }
+      }}
+      className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+    />
+
+    {mediaLoading && (
+      <p className="text-sm text-slate-400">
+        Uploading...
+      </p>
+    )}
+
+    {mediaError && (
+      <p className="text-sm text-rose-500">
+        {mediaError}
+      </p>
+    )}
+
+    {mediaId && (
+      <p className="text-sm text-green-500">
+        File uploaded successfully
+      </p>
+    )}
+  </div>
+)}
 
                 <textarea
                   rows={5}
