@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAccessToken } from "@/lib/auth";
 import { getUserId, getUsername } from "@/utils/authStorage";
+import convertNamedToPositional, { escapeRegExp } from "@/utils/placeholderUtils";
 interface Button {
   type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
 
@@ -540,17 +541,10 @@ export function Templates({ isDark }: TemplatesProps) {
 
     setTemplateNameError(null);
 
-    if (
-      hasVariables &&
-      parameterFormat === "POSITIONAL" &&
-      variables.some((v) => !/^\d+$/.test(v))
-    ) {
-      const validationMessage =
-        "For POSITIONAL templates, placeholders must use numeric indexes like {{1}}, {{2}}.";
-      console.log("handleSave validation failed: positional variables invalid", { variables });
-      setSubmitMessage(validationMessage);
-      return;
-    }
+    // When parameterFormat is POSITIONAL we accept either numeric placeholders
+    // or named placeholders entered by the user — named placeholders will be
+    // converted to positional form before sending. Therefore do not reject
+    // non-numeric placeholders here.
 
    if (
   hasVariables &&
@@ -596,6 +590,8 @@ export function Templates({ isDark }: TemplatesProps) {
     }
 
     const components: any[] = [];
+    // Capture ordered variables from body when converting named -> positional
+    let varsOrderForPayload: string[] = [];
     const headerVariables =
       variableMode === "WITH_VARIABLES"
         ? Array.from(new Set(extractVariables(header)))
@@ -647,16 +643,16 @@ if (needsMediaHeader && mediaId) {
       text: body,
     };
 
+    // If using WITH_VARIABLES and POSITIONAL format, convert named placeholders
+    // to positional using the shared utility and capture ordered variables.
     if (variableMode === "WITH_VARIABLES" && bodyVariables.length > 0) {
       if (parameterFormat === "POSITIONAL") {
-        bodyComponent.example = {
-          body_text: [
-            bodyVariables.map(
-              (variable) =>
-                previewValues[variable]?.trim() || `sample_${variable}`,
-            ),
-          ],
-        };
+        const result = convertNamedToPositional(body, previewValues);
+        bodyComponent.text = result.text;
+        if (result.exampleBodyText) {
+          bodyComponent.example = { body_text: result.exampleBodyText };
+        }
+        varsOrderForPayload = result.variables || [];
       } else {
         bodyComponent.example = {
           body_text_named_params: bodyVariables.map((variable) => ({
@@ -698,18 +694,24 @@ if (
   setSubmitMessage("Please upload media first.");
   return;
 }
+    const payloadVariables =
+      variableMode === "WITH_VARIABLES"
+        ? varsOrderForPayload.length > 0
+          ? varsOrderForPayload
+          : allVariables
+        : [];
+
     const payload: any = {
-      
       tenantId: actualTenantId,
       name: templateName,
       category,
       language: languages.join(","),
       components,
-      variables: allVariables,
+      variables: payloadVariables,
       createdBy: actualTenantId || actualCreatedBy,
     };
 
-   payload.parameterFormat = parameterFormat;
+    payload.parameterFormat = parameterFormat;
 
     console.log("handleSave payload", payload);
 
@@ -791,7 +793,8 @@ const getPreviewBody = () => {
   if (variableMode === "WITH_VARIABLES") {
     Array.from(new Set(extractVariables(body))).forEach((variable) => {
       const value = previewValues[variable] || variable;
-      preview = preview.replaceAll(`{{${variable}}}`, value);
+      const re = new RegExp("{{\\s*" + escapeRegExp(variable) + "\\s*}}", "g");
+      preview = preview.replace(re, value);
     });
   }
 
