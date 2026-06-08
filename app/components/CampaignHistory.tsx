@@ -70,7 +70,7 @@ const fetchOverallStats =
 
       const response =
         await fetch(
-          "https://apiwhatsapp.blackstoneinfomaticstech.com/campaignrun/v1/overallstats",
+          "http://localhost:5000/campaignrun/v1/overallstats",
           {
             method: "GET",
 
@@ -119,7 +119,7 @@ const fetchOverallStats =
       const token = getAccessToken();
 
       const response = await fetch(
-`https://apiwhatsapp.blackstoneinfomaticstech.com/campaignrun/v1/getall?page=${campaignPagination.page}&limit=${campaignPagination.limit}`
+`http://localhost:5000/campaignrun/v1/getall?page=${campaignPagination.page}&limit=${campaignPagination.limit}`
    ,     {
           method: "GET",
           headers: {

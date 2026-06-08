@@ -66,7 +66,7 @@ export function DashboardSidebar({
   return (
     <aside
       className={
-        "fixed left-0 top-0 h-screen w-64 border-r p-6 overflow-y-auto " +
+        "fixed left-0 top-0 h-screen w-[250px] border-r p-6 overflow-y-auto " +
         (isDark
           ? "border-slate-800/70 bg-slate-900/80"
           : "border-slate-200/70 bg-white/90")
@@ -74,38 +74,32 @@ export function DashboardSidebar({
     >
       <div className="flex h-full flex-col justify-between">
         {/* Top Section */}
-        <div>
+        <div className="space-y-6">
           {/* Logo Card */}
           <div
-            className={`relative mb-8 overflow-hidden rounded-[2rem] border p-6 backdrop-blur-xl ${
-              isDark
-                ? "border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl shadow-black/30"
-                : "border-slate-200 bg-white shadow-xl shadow-slate-200/60"
+            className={`p-2 ${
+              isDark ? "border-slate-800" : "border-slate-200"
             }`}
           >
-            {/* Glow */}
-            <div className="absolute -top-10 right-0 h-32 w-32 rounded-full bg-sky-500/10 blur-3xl" />
-
-            {/* Logo */}
-<div className="mb-8 flex justify-center">
-  <div className="relative h-64 w-64">
-    <Image
-      src={
-        isDark
-          ? "/blackstone_wa_dark.png"
-          : "/blackstone_wa_light.png"
-      }
-      alt="Blackstone Blast logo"
-      fill
-      className="object-contain"
-      priority
-    />
-  </div>
-</div>
+            <div className="justify-center">
+              <div className="relative h-28 w-full">
+                <Image
+                  src={
+                    isDark
+                      ? "/blackstone_wa_dark.png"
+                      : "/blackstone_wa_lights.png"
+                  }
+                  alt="Blackstone Blast logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
           </div>
 
           {/* Navigation */}
-          <nav className="space-y-3">
+          <nav className="space-y-3 mt-6">
             {navItems.map((item) => {
               const active = activeSection === item.key;
 

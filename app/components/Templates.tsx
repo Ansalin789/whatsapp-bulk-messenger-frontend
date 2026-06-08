@@ -877,7 +877,7 @@ return (
 
           <button
             onClick={() => setOpen(true)}
-            className="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-semibold"
+            className="bg-sky-500 hover:bg-sky-600 text-white cursor-pointer px-6 py-3 rounded-xl font-semibold"
           >
             Create Template
           </button>
@@ -924,7 +924,10 @@ return (
                   <div className="p-6">
                     <div className="flex justify-between items-start">
                       <div>
+                        <div className="flex justify-between">
                         <h3 className="font-bold text-xl">{template.name}</h3>
+                        <h3 className="font-bold text-xl">{template.name}</h3>
+                        </div>
 
                         <div className="flex gap-2 mt-3">
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">

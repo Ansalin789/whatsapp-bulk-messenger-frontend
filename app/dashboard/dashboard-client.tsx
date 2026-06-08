@@ -50,28 +50,79 @@ export default function DashboardClient() {
         {/* Main Content */}
         <main className="ml-64 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-8 py-8">
+            <div
+  className={`
+    relative overflow-hidden rounded-3xl p-6 mb-8
+    ${
+      isDark
+        ? "bg-gradient-to-r from-[#075E54] via-[#128C7E] to-[#25D366]"
+        : "bg-gradient-to-r from-[#128C7E] via-[#25D366] to-[#4ADE80]"
+    }
+    shadow-2xl
+  `}
+>
+  <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+
+  <div className="relative flex items-center justify-between">
+    <div>
+      <h1 className="text-3xl font-bold text-white">
+        WhatsApp Bulk Messenger
+      </h1>
+
+      <p className="mt-2 text-sm text-white/80">
+        Manage campaigns, templates and message delivery from one place.
+      </p>
+    </div>
+
+    <div className="hidden md:flex items-center justify-center h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-lg">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-8 w-8 text-white"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M20.52 3.48A11.82 11.82 0 0 0 12.06 0C5.42 0 .02 5.4.02 12.04c0 2.12.55 4.18 1.6 6L0 24l6.12-1.6a11.95 11.95 0 0 0 5.94 1.52h.01c6.63 0 12.03-5.4 12.03-12.04 0-3.21-1.25-6.23-3.58-8.4z" />
+      </svg>
+    </div>
+  </div>
+</div>
             {/* Header with Theme Toggle */}
             <div className="mb-8 flex items-start justify-between gap-8">
-              <header>
-                <h1
-                  className={
-                    "mt-3 text-4xl font-semibold " +
-                    (isDark ? "text-white" : "text-slate-950")
-                  }
-                >
-                  {activeSection === "campaigns" && "Campaign"}
-                  {activeSection === "history" && "Campaign History"}
-                  {activeSection === "templates" && "Message Templates"}
-                </h1>
-                <p className={`mt-3 max-w-2xl text-sm leading-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  {activeSection === "campaigns" &&
-                    "Launch a new WhatsApp campaign with broadcast, segment, and timing controls."}
-                  {activeSection === "history" &&
-                    "View your campaign performance and recent delivery status."}
-                  {activeSection === "templates" &&
-                    "Manage and create reusable WhatsApp message templates."}
-                </p>
-              </header>
+              <header className="space-y-4">
+  <div className="flex items-center gap-3">
+    <div className="h-12 w-1 rounded-full bg-[#25D366]" />
+
+    <div>
+      <h1
+        className={`
+          text-4xl font-bold tracking-tight
+          ${
+            isDark
+              ? "text-white"
+              : "text-slate-900"
+          }
+        `}
+      >
+        {activeSection === "campaigns" && "Campaign Manager"}
+        {activeSection === "history" && "Campaign Analytics"}
+        {activeSection === "templates" && "Message Templates"}
+      </h1>
+
+      <p
+        className={`mt-1 text-sm ${
+          isDark ? "text-slate-400" : "text-slate-500"
+        }`}
+      >
+        {activeSection === "campaigns" &&
+          "Create and launch WhatsApp campaigns instantly."}
+        {activeSection === "history" &&
+          "Monitor delivery reports and campaign performance."}
+        {activeSection === "templates" &&
+          "Build reusable templates for faster communication."}
+      </p>
+    </div>
+  </div>
+</header>
               <button
                 type="button"
                 onClick={() => {

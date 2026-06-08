@@ -46,26 +46,38 @@ export function CampaignList({
     : "bg-white border-slate-200";
   const mutedText = isDark ? "text-slate-400" : "text-slate-500";
   const inputClass = isDark
-    ? "border-slate-700 bg-slate-800 text-white placeholder-slate-500 focus:border-sky-500 focus:ring-sky-500/20"
-    : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-sky-400 focus:ring-sky-400/20";
+    ? "border-[#2A3942] bg-[#202C33] text-white placeholder-slate-500 focus:border-[#25D366] focus:ring-[#25D366]/20"
+    : "border-[#D9FDD3] bg-[#F7FFF9] text-slate-900 placeholder-slate-400 focus:border-[#25D366] focus:ring-[#25D366]/20";
   const iconBtnClass = isDark
     ? "border-slate-700 bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
     : "border-slate-200 bg-white text-slate-500 hover:text-slate-900 hover:bg-slate-50";
 
   return (
-    <section className={`rounded-2xl border p-6 ${surface}`}>
+    <section
+      className={`
+    rounded-[32px]
+    border
+    p-8
+    backdrop-blur-xl
+    shadow-2xl
+    ${isDark ? "bg-[#111B21]/95 border-[#202C33]" : "bg-white border-[#E5E7EB]"}
+  `}
+    >
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2
-            className={`font-semibold tracking-tight text-lg ${isDark ? "text-white" : "text-slate-900"}`}
-          >
-            Campaigns
-          </h2>
-          <p className={`mt-1 text-sm ${mutedText}`}>
-            Real-time status of all your WhatsApp broadcasts.
-          </p>
-        </div>
+      <h2
+        className={`font-bold tracking-tight text-2xl ${
+          isDark ? "text-white" : "text-slate-900"
+        }`}
+      >
+        Campaign Manager
+      </h2>
+
+      <p className={`mt-1 text-sm ${mutedText}`}>
+        Monitor and manage all WhatsApp campaigns.
+      </p>
+    </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search */}
@@ -293,12 +305,9 @@ export function CampaignList({
                         : "bg-gradient-to-r from-sky-100 via-slate-50 to-cyan-100 text-sky-700 shadow-sky-200 hover:-translate-y-0.5 hover:shadow-sky-300/30"
                     } active:scale-[0.97]`}
                   >
-
                     <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-500/30" />
                     Launch Campaign <PiRocketLaunchFill />
-
                   </button>
-                  
                 </div>
               </article>
             );

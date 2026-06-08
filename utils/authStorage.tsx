@@ -19,9 +19,14 @@ export const setAccessToken = (token: string) => {
 };
 
 export const getAccessToken = () => {
-  if (accessToken) return accessToken;
+  if (accessToken) {
+    console.log("Using in-memory access token:", accessToken);
+     return accessToken;
+  }
   if (typeof window !== "undefined") {
-    return localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem("accessToken");
+    console.log("Using access token from localStorage:", accessToken);
+    return accessToken;
   }
   return null;
 };
@@ -137,8 +142,15 @@ export const logout = () => {
   username = null;
   email = null;
   userId = null;
+  tenantId = null;
 
   if (typeof window !== "undefined") {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("accessExp");
+    localStorage.removeItem("refreshExp");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
     localStorage.removeItem("userId");
     localStorage.removeItem("tenantId");
   }

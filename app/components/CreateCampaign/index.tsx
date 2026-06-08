@@ -48,7 +48,7 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
     ).toString();
 
     try {
-      const response = await fetch(`https://apiwhatsapp.blackstoneinfomaticstech.com/campaign/v1/getall?${queryParams}`, {
+      const response = await fetch(`http://localhost:5000/campaign/v1/getall?${queryParams}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

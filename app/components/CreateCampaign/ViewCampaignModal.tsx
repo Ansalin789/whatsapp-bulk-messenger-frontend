@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, getUserId } from "@/lib/auth";
 
 interface ViewCampaignModalProps {
   isDark: boolean;
@@ -60,6 +60,14 @@ export function ViewCampaignModal({
 }: ViewCampaignModalProps) {
   const [viewLoading, setViewLoading] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [templatePagination, setTemplatePagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [viewError, setViewError] = useState("");
   const [templateError, setTemplateError] = useState("");
@@ -74,6 +82,17 @@ export function ViewCampaignModal({
   const [uploadMethod] = useState<"file" | "paste">("file");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
+  const [mediaUploadInfo, setMediaUploadInfo] = useState<{
+    id?: string;
+    url?: string;
+    fileName?: string;
+    mediaType?: string;
+  } | null>(null);
+  const [mediaError, setMediaError] = useState("");
+  const [mediaMessage, setMediaMessage] = useState("");
+  const [mediaLoading, setMediaLoading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [manualContacts, setManualContacts] = useState("");
   const [contacts, setContacts] = useState<string[]>([]);
@@ -125,6 +144,8 @@ export function ViewCampaignModal({
     setViewStep("selectTemplate");
     setNextError("");
     setUploadFile(null);
+    setMediaFile(null);
+    setMediaUploadInfo(null);
     setUploadComplete(false);
     setManualContacts("");
     setContacts([]);
@@ -137,12 +158,23 @@ export function ViewCampaignModal({
     setToast(null);
     setContactMessage("");
     setContactError("");
+    setMediaMessage("");
+    setMediaError("");
     setShowFailedDetails(false);
+    setTemplatePagination({
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    });
     if (toastTimerRef.current) {
       window.clearTimeout(toastTimerRef.current);
       toastTimerRef.current = null;
     }
   };
+ 
 
   useEffect(() => {
     if (!isOpen) {
@@ -164,7 +196,7 @@ export function ViewCampaignModal({
 
       try {
         const campaignResponse = await fetch(
-          `https://apiwhatsapp.blackstoneinfomaticstech.com/campaign/v1/${campaignId}`,
+          `http://localhost:5000/campaign/v1/${campaignId}`,
           {
             method: "GET",
             headers: {
@@ -189,7 +221,7 @@ export function ViewCampaignModal({
         setSelectedCampaign(campaignData?.data || campaignData);
 
         const templateResponse = await fetch(
-          "https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/getall?status=APPROVED",
+          `http://localhost:5000/templates/v1/getall?page=${templatePagination.page}&limit=${templatePagination.limit}&status=APPROVED`,
           {
             method: "GET",
             headers: {
@@ -212,6 +244,16 @@ export function ViewCampaignModal({
           );
         }
         setTemplates(templateData?.data || []);
+        setTemplatePagination((prev) => ({
+          ...prev,
+          total: templateData?.pagination?.total || prev.total,
+          page: templateData?.pagination?.page || prev.page,
+          limit: templateData?.pagination?.limit || prev.limit,
+          totalPages: templateData?.pagination?.totalPages || prev.totalPages,
+          hasNextPage: templateData?.pagination?.hasNextPage ?? prev.hasNextPage,
+          hasPreviousPage:
+            templateData?.pagination?.hasPreviousPage ?? prev.hasPreviousPage,
+        }));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to load data";
@@ -223,7 +265,7 @@ export function ViewCampaignModal({
     };
 
     fetchDetails();
-  }, [campaignId, isOpen]);
+  }, [campaignId, isOpen, templatePagination.page]);
 
   useEffect(() => {
     if (!toast) return;
@@ -279,15 +321,16 @@ export function ViewCampaignModal({
 
     const campaignIdValue = selectedCampaign._id || selectedCampaign.id;
     const templateId = selectedTemplate.id || selectedTemplate._id;
+      const token = getAccessToken();
 
     try {
       const response = await fetch(
-        "https://apiwhatsapp.blackstoneinfomaticstech.com/campaignrun/v1/create",
+        "http://localhost:5000/campaignrun/v1/create",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${getAccessToken()}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ campaignId: campaignIdValue, templateId }),
         },
@@ -381,7 +424,7 @@ export function ViewCampaignModal({
     setNextLoading(true);
 
     try {
-      const uploadUrl = `https://apiwhatsapp.blackstoneinfomaticstech.com/campaigncontact/v1/${campaignRunId}/upload`;
+      const uploadUrl = `http://localhost:5000/campaigncontact/v1/${campaignRunId}/upload`;
       let response: Response;
 
       if (uploadFile) {
@@ -472,6 +515,127 @@ export function ViewCampaignModal({
     }
   };
 
+  const handleMediaUpload = async () => {
+    setMediaError("");
+    setMediaMessage("");
+
+    if (!mediaFile) {
+      setMediaError("Please choose an image, video, or document before uploading.");
+      return;
+    }
+    if (!campaignId) {
+      setMediaError("Missing campaign ID.");
+      return;
+    }
+
+    setMediaLoading(true);
+
+    try {
+      const uploadUrl = `http://localhost:5000/campaignmedia/v1/${campaignRunId}/upload`;
+      const formData = new FormData();
+      const userId = getUserId();
+      formData.append("file", mediaFile);
+      formData.append("uploadedBy", userId || "USR00002");
+
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let message = `Failed to upload media (${response.status})`;
+        try {
+          const payload = await response.json();
+          message = payload.message || payload.error || message;
+        } catch {
+          const text = await response.text();
+          if (text) message = text;
+        }
+        throw new Error(message);
+      }
+
+      const result = await parseResponseBody(response);
+      if (typeof result === "string") {
+        throw new Error(`Invalid media upload response: ${result}`);
+      }
+
+      const mediaData = result?.data || result;
+      setMediaUploadInfo({
+        id: mediaData?._id || mediaData?.id || mediaData?.mediaId,
+        url:
+          mediaData?.url ||
+          mediaData?.fileUrl ||
+          mediaData?.mediaUrl ||
+          mediaData?.path ||
+          mediaData?.filePath ||
+          undefined,
+        fileName: mediaData?.fileName || mediaData?.name || mediaFile.name,
+        mediaType: mediaData?.mediaType || mediaFile.type,
+      });
+      setMediaMessage(result?.message || "Media uploaded successfully.");
+      setMediaFile(null);
+      if (mediaInputRef.current) mediaInputRef.current.value = "";
+    } catch (error) {
+      setMediaError(
+        error instanceof Error ? error.message : "Failed to upload media.",
+      );
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const handleDeleteMedia = async () => {
+    setMediaError("");
+    setMediaMessage("");
+
+    if (!campaignRunId) {
+      setMediaFile(null);
+      setMediaUploadInfo(null);
+      if (mediaInputRef.current) mediaInputRef.current.value = "";
+      setMediaMessage("Media removed locally.");
+      return;
+    }
+
+    setMediaLoading(true);
+
+    try {
+      const query = mediaUploadInfo?.id;
+      const deleteUrl = `http://localhost:5000/campaignmedia/v1/${campaignRunId}/${query}`;
+      const response = await fetch(deleteUrl, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        let message = `Failed to delete media (${response.status})`;
+        try {
+          const payload = await response.json();
+          message = payload.message || payload.error || message;
+        } catch {
+          const text = await response.text();
+          if (text) message = text;
+        }
+        throw new Error(message);
+      }
+
+      setMediaFile(null);
+      setMediaUploadInfo(null);
+      if (mediaInputRef.current) mediaInputRef.current.value = "";
+      setMediaMessage("Media deleted successfully.");
+    } catch (error) {
+      setMediaError(
+        error instanceof Error ? error.message : "Failed to delete media.",
+      );
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
   const handleDeleteFile = async () => {
     setContactError("");
     setContactMessage("");
@@ -490,7 +654,7 @@ export function ViewCampaignModal({
 
     try {
       const response = await fetch(
-        `https://apiwhatsapp.blackstoneinfomaticstech.com/campaigncontact/v1/${campaignRunId}`,
+        `http://localhost:5000/campaigncontact/v1/${campaignRunId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${getAccessToken()}` },
@@ -553,7 +717,7 @@ export function ViewCampaignModal({
     setLaunchLoading(true);
 
     try {
-      const launchUrl = `https://apiwhatsapp.blackstoneinfomaticstech.com/campaignrun/v1/${campaignRunId}/launch`;
+      const launchUrl = `http://localhost:5000/campaignrun/v1/${campaignRunId}/launch`;
       const payload = options?.scheduledAt
         ? { runType: "SCHEDULED", scheduledAt: options.scheduledAt }
         : { runType: "INSTANT" };
@@ -606,7 +770,18 @@ export function ViewCampaignModal({
 
   if (!isOpen) return null;
 
+  const approvedTemplates = templates.filter(
+    (template) => template?.status === "APPROVED",
+  );
+  const displayTemplates = approvedTemplates;
   const currentStep = viewStep === "selectTemplate" ? 1 : 2;
+  const startIndex = displayTemplates.length === 0
+    ? 0
+    : (templatePagination.page - 1) * templatePagination.limit + 1;
+  const endIndex = Math.min(
+    templatePagination.total,
+    templatePagination.page * templatePagination.limit,
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -672,7 +847,7 @@ export function ViewCampaignModal({
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
-                  {templates.length} Templates
+                  {templatePagination.total} Templates
                 </div>
               </div>
 
@@ -720,21 +895,28 @@ export function ViewCampaignModal({
             {viewStep === "selectTemplate" ? (
               <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 cursor-pointer gap-5">
-                  {templates.map((template, index) => (
-                    <div
-                      key={template.id || index}
-                      onClick={() => setSelectedTemplate(template)}
-                      className={`group relative overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-                        selectedTemplate?.id === template.id
-                          ? "ring-2 ring-emerald-500 shadow-xl shadow-emerald-500/20"
-                          : ""
-                      }
-${
-  isDark
-    ? " border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 hover:border-sky-500/40"
-    : " border-slate-200 bg-gradient-to-br from-white to-slate-50 hover:border-sky-300"
-}`}
-                    >
+                  {displayTemplates.length === 0 ? (
+                    <div className="col-span-full rounded-3xl border border-dashed px-6 py-12 text-center text-sm text-slate-500">
+                      No approved templates found on this page.
+                    </div>
+                  ) : null}
+                  {displayTemplates.length > 0 &&
+                    displayTemplates.map((template, index) => (
+                      <div
+                        key={template.id || index}
+                        onClick={() => setSelectedTemplate(template)}
+                        className={[
+                          "group relative overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+                          selectedTemplate?.id === template.id
+                            ? "ring-2 ring-emerald-500 shadow-xl shadow-emerald-500/20"
+                            : "",
+                          isDark
+                            ? "border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 hover:border-sky-500/40"
+                            : "border-slate-200 bg-gradient-to-br from-white to-slate-50 hover:border-sky-300",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
                       <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-sky-500/10 blur-3xl" />
                       <div className="flex flex-wrap items-center gap-10 w-full">
                         <span className="rounded-sm border bg-sky-500/10 px-3 py-1 text-[10px] font-medium text-sky-400">
@@ -796,6 +978,50 @@ ${
                     </div>
                   ))}
                 </div>
+                {templatePagination.totalPages > 1 && (
+                  <div
+                    className={`mt-6 flex flex-col gap-3 rounded-3xl border p-4 ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        Showing {startIndex}–{endIndex} of {templatePagination.total} approved templates
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTemplatePagination((prev) => ({
+                              ...prev,
+                              page: Math.max(1, prev.page - 1),
+                            }))
+                          }
+                          disabled={!templatePagination.hasPreviousPage}
+                          className="rounded-lg border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          ← Prev
+                        </button>
+                        <span className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                          {templatePagination.page} / {templatePagination.totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTemplatePagination((prev) => ({
+                              ...prev,
+                              page: Math.min(prev.totalPages, prev.page + 1),
+                            }))
+                          }
+                          disabled={!templatePagination.hasNextPage}
+                          className="rounded-lg border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div
                   className={`
     sticky top-0 h-fit rounded-3xl border p-6
@@ -997,6 +1223,103 @@ ${
                         >
                           Delete file
                         </button>
+                      </div>
+
+                      <div className={`mt-8 rounded-3xl border p-4 shadow-sm ${isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h4 className="text-lg font-semibold">Media Upload</h4>
+                            <p className={`mt-2 text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                              Upload an image, video, or document for the campaign.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700">
+                              Media file
+                            </label>
+                            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+                              <label
+                                htmlFor="media-upload"
+                                className={`inline-flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+                              >
+                                Choose file
+                              </label>
+                              <div className={`min-w-0 flex-1 rounded-2xl border px-4 py-3 text-sm ${isDark ? "border-slate-700 bg-slate-950 text-slate-200" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                                {mediaFile ? mediaFile.name : mediaUploadInfo?.fileName || "No file selected."}
+                              </div>
+                            </div>
+                            <input
+                              id="media-upload"
+                              ref={mediaInputRef}
+                              type="file"
+                              accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] ?? null;
+                                setMediaFile(file);
+                                setMediaError("");
+                                setMediaMessage("");
+                              }}
+                            />
+                          </div>
+                          {mediaError && (
+                            <p className="text-sm text-red-500">{mediaError}</p>
+                          )}
+                          {mediaMessage && (
+                            <p className="text-sm text-emerald-600">{mediaMessage}</p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={handleMediaUpload}
+                              disabled={mediaLoading || !mediaFile}
+                              className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {mediaLoading ? "Uploading..." : "Upload media"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleDeleteMedia}
+                              disabled={mediaLoading || !mediaUploadInfo}
+                              className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Delete media
+                            </button>
+                          </div>
+
+                          {mediaUploadInfo?.url && (
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                              <p className="font-semibold">Uploaded media preview</p>
+                              <div className="mt-3 space-y-3">
+                                {mediaUploadInfo.mediaType?.startsWith("image/") ? (
+                                  <img
+                                    src={mediaUploadInfo.url}
+                                    alt={mediaUploadInfo.fileName || "Uploaded media"}
+                                    className="max-h-48 w-full rounded-2xl object-contain"
+                                  />
+                                ) : mediaUploadInfo.mediaType?.startsWith("video/") ? (
+                                  <video
+                                    src={mediaUploadInfo.url}
+                                    controls
+                                    className="max-h-48 w-full rounded-2xl bg-black"
+                                  />
+                                ) : (
+                                  <a
+                                    href={mediaUploadInfo.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sm font-medium text-sky-600 hover:underline"
+                                  >
+                                    {mediaUploadInfo.fileName || "View uploaded media"}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
