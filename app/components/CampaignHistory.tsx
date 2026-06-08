@@ -374,6 +374,16 @@ const filteredCampaigns =
       </span>
     </div>
 
+  <div className="flex items-center justify-between">
+      <span className="text-sm text-slate-400">
+        Duplicate File
+      </span>
+
+      <span className="font-semibold text-amber-900">
+        {overallStats?.contacts?.duplicateInFile || 0}
+      </span>
+    </div>
+
     <div className="flex items-center justify-between">
       <span className="text-sm text-slate-400">
         Pending
