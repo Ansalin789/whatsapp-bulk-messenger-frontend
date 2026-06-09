@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { getAccessToken } from "@/lib/auth";
 import { getUserId, getUsername } from "@/utils/authStorage";
-import convertNamedToPositional, { escapeRegExp } from "@/utils/placeholderUtils";
+import { Eye } from "lucide-react";
+import convertNamedToPositional, {
+  escapeRegExp,
+} from "@/utils/placeholderUtils";
 interface Button {
   type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
 
@@ -144,6 +147,13 @@ export function Templates({ isDark }: TemplatesProps) {
     hasNextPage: false,
     hasPreviousPage: false,
   });
+
+  const headerComponent = selectedTemplate?.components?.find(
+    (c: any) => c.type === "HEADER",
+  );
+
+  const isMediaTemplate =
+    headerComponent?.format === "IMAGE" || headerComponent?.format === "VIDEO";
 
   const filteredTemplates = templates.filter((template) => {
     const matchesSearch =
@@ -297,20 +307,28 @@ export function Templates({ isDark }: TemplatesProps) {
     }
 
     formData.append("tenantId", tenant);
-    console.log("handleMediaUpload form values", { mediaType, tenant, hasToken: !!token });
+    console.log("handleMediaUpload form values", {
+      mediaType,
+      tenant,
+      hasToken: !!token,
+    });
 
     try {
       const response = await fetch(
         "http://localhost:5000/templatemedia/v1/upload",
         {
           method: "POST",
-          headers: {  
+          headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: formData,
         },
       );
-      console.log("handleMediaUpload response status", response.status, response.statusText);
+      console.log(
+        "handleMediaUpload response status",
+        response.status,
+        response.statusText,
+      );
 
       if (!response.ok) {
         let errorMessage = "Failed to upload media";
@@ -386,9 +404,12 @@ export function Templates({ isDark }: TemplatesProps) {
     const hasBodyVariables = variables.length > 0;
 
     if (variableMode === "WITHOUT_VARIABLES" && hasBodyVariables) {
-      console.log("handleSave validation failed: body contains placeholders while in WITHOUT_VARIABLES mode", {
-        variables,
-      });
+      console.log(
+        "handleSave validation failed: body contains placeholders while in WITHOUT_VARIABLES mode",
+        {
+          variables,
+        },
+      );
       setSubmitMessage(
         "Remove placeholders from the body or switch to With Variables.",
       );
@@ -415,7 +436,10 @@ export function Templates({ isDark }: TemplatesProps) {
       if (variableMode === "WITH_VARIABLES" && variables.length > 0) {
         const missingPreview = variables.some((v) => !previewValues[v]?.trim());
         if (missingPreview) {
-          console.log("handleSave validation failed: missing preview values", { variables, previewValues });
+          console.log("handleSave validation failed: missing preview values", {
+            variables,
+            previewValues,
+          });
           setSubmitMessage(
             "Please fill in all preview values before submitting.",
           );
@@ -427,7 +451,10 @@ export function Templates({ isDark }: TemplatesProps) {
       );
 
       if (hasMarketingWords) {
-        console.log("handleSave validation failed: authentication contains marketing words", { body });
+        console.log(
+          "handleSave validation failed: authentication contains marketing words",
+          { body },
+        );
         setSubmitMessage(
           "Authentication templates cannot contain marketing content.",
         );
@@ -435,7 +462,10 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       if (variables.length > 3) {
-        console.log("handleSave validation failed: too many authentication variables", { variables });
+        console.log(
+          "handleSave validation failed: too many authentication variables",
+          { variables },
+        );
         setSubmitMessage(
           "Authentication templates should use minimal variables.",
         );
@@ -443,7 +473,10 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       if (body.trim().length < 20) {
-        console.log("handleSave validation failed: authentication body too short", { bodyLength: body.trim().length });
+        console.log(
+          "handleSave validation failed: authentication body too short",
+          { bodyLength: body.trim().length },
+        );
         setSubmitMessage("Authentication template content is too short.");
         return;
       }
@@ -455,7 +488,9 @@ export function Templates({ isDark }: TemplatesProps) {
       const plainTextLength = body.replace(/{{(.*?)}}/g, "").trim().length;
 
       if (plainTextLength < 25) {
-        console.log("handleSave validation failed: marketing body too short", { plainTextLength });
+        console.log("handleSave validation failed: marketing body too short", {
+          plainTextLength,
+        });
         setSubmitMessage(
           "Marketing templates require meaningful promotional content.",
         );
@@ -463,7 +498,10 @@ export function Templates({ isDark }: TemplatesProps) {
       }
 
       if (variables.length > 5) {
-        console.log("handleSave validation failed: too many marketing variables", { variables });
+        console.log(
+          "handleSave validation failed: too many marketing variables",
+          { variables },
+        );
         setSubmitMessage("Too many variables for a marketing template.");
         return;
       }
@@ -482,7 +520,9 @@ export function Templates({ isDark }: TemplatesProps) {
       );
 
       if (hasSpam) {
-        console.log("handleSave validation failed: marketing spam words", { body });
+        console.log("handleSave validation failed: marketing spam words", {
+          body,
+        });
         setSubmitMessage(
           "Marketing template contains restricted promotional wording.",
         );
@@ -494,7 +534,9 @@ export function Templates({ isDark }: TemplatesProps) {
 
     if (category === "UTILITY") {
       if (body.trim().length < 15) {
-        console.log("handleSave validation failed: utility body too short", { bodyLength: body.trim().length });
+        console.log("handleSave validation failed: utility body too short", {
+          bodyLength: body.trim().length,
+        });
         setSubmitMessage(
           "Utility templates must contain meaningful service information.",
         );
@@ -515,7 +557,10 @@ export function Templates({ isDark }: TemplatesProps) {
       );
 
       if (hasMarketingContent) {
-        console.log("handleSave validation failed: utility contains promotional content", { body });
+        console.log(
+          "handleSave validation failed: utility contains promotional content",
+          { body },
+        );
         setSubmitMessage(
           "Utility templates should not contain promotional content.",
         );
@@ -533,7 +578,9 @@ export function Templates({ isDark }: TemplatesProps) {
     if (!validNamePattern.test(normalizedName)) {
       const validationMessage =
         "Template name must contain only lowercase letters, numbers, and underscores.";
-      console.log("handleSave validation failed: invalid templateName", { normalizedName });
+      console.log("handleSave validation failed: invalid templateName", {
+        normalizedName,
+      });
       setSubmitMessage(validationMessage);
       setTemplateNameError(validationMessage);
       return;
@@ -546,27 +593,32 @@ export function Templates({ isDark }: TemplatesProps) {
     // converted to positional form before sending. Therefore do not reject
     // non-numeric placeholders here.
 
-   if (
-  hasVariables &&
-  parameterFormat === "NAMED" &&
-  variables.some((v) => /^\d+$/.test(v))
-) {
-  console.log("handleSave validation failed: named variables invalid", { variables });
-  setSubmitMessage(
-    "For NAMED templates, placeholders must use names like {{customer_name}}.",
-  );
-  return;
-}
+    if (
+      hasVariables &&
+      parameterFormat === "NAMED" &&
+      variables.some((v) => /^\d+$/.test(v))
+    ) {
+      console.log("handleSave validation failed: named variables invalid", {
+        variables,
+      });
+      setSubmitMessage(
+        "For NAMED templates, placeholders must use names like {{customer_name}}.",
+      );
+      return;
+    }
 
     if (
       variableMode === "WITH_VARIABLES" &&
       variables.length > 0 &&
       variables.some((v) => !previewValues[v]?.trim())
     ) {
-      console.log("handleSave validation failed: missing preview values before submit", {
-        variables,
-        previewValues,
-      });
+      console.log(
+        "handleSave validation failed: missing preview values before submit",
+        {
+          variables,
+          previewValues,
+        },
+      );
       setSubmitMessage(
         "Please enter sample values for all variables before submitting.",
       );
@@ -582,7 +634,9 @@ export function Templates({ isDark }: TemplatesProps) {
     const actualTenantId = getUserId() || "USR00002";
 
     if (!actualTenantId) {
-      console.log("handleSave failed: missing actualTenantId", { currentTenantId: actualTenantId });
+      console.log("handleSave failed: missing actualTenantId", {
+        currentTenantId: actualTenantId,
+      });
       setSubmitMessage(
         "Unable to determine tenant ID from the logged-in user.",
       );
@@ -608,35 +662,35 @@ export function Templates({ isDark }: TemplatesProps) {
       new Set([...headerVariables, ...bodyVariables, ...footerVariables]),
     );
 
-    const headerExample = headerVariables.length > 0
-      ? headerVariables.map((variable) =>
-          previewValues[variable]?.trim() || `sample_${variable}`,
-        )
-      : undefined;
+    const headerExample =
+      headerVariables.length > 0
+        ? headerVariables.map(
+            (variable) =>
+              previewValues[variable]?.trim() || `sample_${variable}`,
+          )
+        : undefined;
 
-const needsMediaHeader =
-  mediaType === "IMAGE" ||
-  mediaType === "VIDEO" ||
-  mediaType === "DOCUMENT";
+    const needsMediaHeader =
+      mediaType === "IMAGE" ||
+      mediaType === "VIDEO" ||
+      mediaType === "DOCUMENT";
 
-if (mediaType === "TEXT" && header.trim()) {
-  components.push({
-    type: "HEADER",
-    format: "TEXT",
-    text: header,
-  });
-}
-if (needsMediaHeader && mediaId) {
-  components.push({
-    type: "HEADER",
-    format: mediaType,
-    example: {
-      header_handle: [mediaId],
-    },
-  });
-}
-
-
+    if (mediaType === "TEXT" && header.trim()) {
+      components.push({
+        type: "HEADER",
+        format: "TEXT",
+        text: header,
+      });
+    }
+    if (needsMediaHeader && mediaId) {
+      components.push({
+        type: "HEADER",
+        format: mediaType,
+        example: {
+          header_handle: [mediaId],
+        },
+      });
+    }
 
     const bodyComponent: any = {
       type: "BODY",
@@ -657,8 +711,7 @@ if (needsMediaHeader && mediaId) {
         bodyComponent.example = {
           body_text_named_params: bodyVariables.map((variable) => ({
             param_name: variable,
-            example:
-              previewValues[variable]?.trim() || `sample_${variable}`,
+            example: previewValues[variable]?.trim() || `sample_${variable}`,
           })),
         };
       }
@@ -676,24 +729,22 @@ if (needsMediaHeader && mediaId) {
     if (buttons.length > 0) {
       components.push({
         type: "BUTTONS",
-buttons: buttons.map((btn) => ({          type: "QUICK_REPLY",
-          text: btn,
-        })),
+        buttons: buttons.map((btn) => ({ type: "QUICK_REPLY", text: btn })),
       });
     }
 
     const actualCreatedBy = createdBy || getUsername() || "USR00002";
-console.log("CURRENT MEDIA ID", mediaId);
-if (
-  (mediaType === "IMAGE" ||
-    mediaType === "VIDEO" ||
-    mediaType === "DOCUMENT") &&
-  uploadedFileName &&
-  !mediaId
-) {
-  setSubmitMessage("Please upload media first.");
-  return;
-}
+    console.log("CURRENT MEDIA ID", mediaId);
+    if (
+      (mediaType === "IMAGE" ||
+        mediaType === "VIDEO" ||
+        mediaType === "DOCUMENT") &&
+      uploadedFileName &&
+      !mediaId
+    ) {
+      setSubmitMessage("Please upload media first.");
+      return;
+    }
     const payloadVariables =
       variableMode === "WITH_VARIABLES"
         ? varsOrderForPayload.length > 0
@@ -716,14 +767,14 @@ if (
     console.log("handleSave payload", payload);
 
     // Add mediaId if available
-const needsMedia =
-  mediaType === "IMAGE" ||
-  mediaType === "VIDEO" ||
-  mediaType === "DOCUMENT";
+    const needsMedia =
+      mediaType === "IMAGE" ||
+      mediaType === "VIDEO" ||
+      mediaType === "DOCUMENT";
 
-if (needsMedia && mediaId) {
-  payload.mediaId = mediaId;
-}
+    if (needsMedia && mediaId) {
+      payload.mediaId = mediaId;
+    }
 
     console.log(payload);
     const token = getAccessToken();
@@ -742,7 +793,11 @@ if (needsMedia && mediaId) {
         },
       );
 
-      console.log("handleSave create response status", response.status, response.statusText);
+      console.log(
+        "handleSave create response status",
+        response.status,
+        response.statusText,
+      );
       if (!response.ok) {
         let errorMessage = `Failed to create template (${response.status})`;
         try {
@@ -766,8 +821,8 @@ if (needsMedia && mediaId) {
       setFooter("");
       setButtons([]);
       setMediaId("");
-setUploadedFileName("");
-setMediaType("");
+      setUploadedFileName("");
+      setMediaType("");
       setCategory("UTILITY");
       setLanguages(["en_US"]);
       setLanguageOption("en_US");
@@ -786,30 +841,33 @@ setMediaType("");
     }
   };
 
-const getPreviewBody = () => {
-  let preview = body;
-  console.log("getPreviewBody called", { body, previewValues, variableMode });
+  const getPreviewBody = () => {
+    let preview = body;
+    console.log("getPreviewBody called", { body, previewValues, variableMode });
 
-  if (variableMode === "WITH_VARIABLES") {
-    Array.from(new Set(extractVariables(body))).forEach((variable) => {
-      const value = previewValues[variable] || variable;
-      const re = new RegExp("{{\\s*" + escapeRegExp(variable) + "\\s*}}", "g");
-      preview = preview.replace(re, value);
-    });
-  }
+    if (variableMode === "WITH_VARIABLES") {
+      Array.from(new Set(extractVariables(body))).forEach((variable) => {
+        const value = previewValues[variable] || variable;
+        const re = new RegExp(
+          "{{\\s*" + escapeRegExp(variable) + "\\s*}}",
+          "g",
+        );
+        preview = preview.replace(re, value);
+      });
+    }
 
-  console.log("getPreviewBody result", preview);
-  return preview;
-};
+    console.log("getPreviewBody result", preview);
+    return preview;
+  };
 
-useEffect(() => {
-  const variables = extractVariables(body);
-  console.log("body changed, extracted variables", { body, variables });
-  setHasVariables(variables.length > 0);
-  setPreviewValues({});
-}, [body]);
+  useEffect(() => {
+    const variables = extractVariables(body);
+    console.log("body changed, extracted variables", { body, variables });
+    setHasVariables(variables.length > 0);
+    setPreviewValues({});
+  }, [body]);
 
-return (
+  return (
     <div className="space-y-6">
       {/* TOP SECTION */}
 
@@ -880,8 +938,34 @@ return (
 
           <button
             onClick={() => setOpen(true)}
-            className="bg-sky-500 hover:bg-sky-600 text-white cursor-pointer px-6 py-3 rounded-xl font-semibold"
+            className="
+    flex items-center gap-3
+    hover:bg-white
+    bg-slate-50
+    border border-slate-200
+    text-slate-800
+    cursor-pointer
+    px-5 py-3
+    rounded-2xl
+    font-semibold
+    hover:shadow-sm
+    shadow-md
+    transition-all duration-300
+  "
           >
+            <span
+              className="
+    flex items-center justify-center
+    h-8 w-8
+    rounded-xl
+    bg-white
+    text-[#25D366]
+    shadow-sm
+    border border-slate-200
+  "
+            >
+              ➕
+            </span>
             Create Template
           </button>
         </div>
@@ -914,66 +998,82 @@ return (
               );
 
               return (
-                <div
-                  key={template.name}
-                  className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-                    isDark
-                      ? "bg-slate-900 border-slate-700"
-                      : "bg-white border-slate-200"
-                  }`}
-                >
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-cyan-400" />
-
-                  <div className="p-6">
-                    <div className="flex justify-between items-start">
+                <div className="rounded-3xl overflow-hidden bg-white shadow-lg hover:shadow-2xl transition-all duration-300">
+                  {/* Phone Header */}
+                  <div className="flex flex-col justify-between h-full">
+                    <div className="bg-[#075E54] p-4 px-6 text-white flex justify-between">
                       <div>
-                        <div className="flex justify-between">
-                        <h3 className="font-bold text-xl">{template.name}</h3>
-                        <h3 className="font-bold text-xl">{template.name}</h3>
-                        </div>
+                        <h3 className="font-semibold text-xs">
+                          {template.name}
+                        </h3>
+                        <p className="text-xs opacity-80 mt-2">
+                          {template.language}
+                        </p>
+                      </div>
 
-                        <div className="flex gap-2 mt-3">
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
-                            {template.category}
-                          </span>
+                      <div>
+                        <h3 className="font-semibold bg-green-700/90 text-[11px] rounded-lg py-0.5 px-3">
+                          {template.status}
+                        </h3>
+                        <p className="text-[11px] opacity-80 text-center mt-1">
+                          {template.components?.[0]?.format}
+                        </p>
+                      </div>
+                    </div>
 
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                            {template.language}
-                          </span>
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
-                            {template.status || "N/A"}
-                          </span>
+                    {/* Chat Preview */}
+                    <div
+                      className="
+      flex items-center gap-2
+      border border-green-200
+      bg-green-50
+      px-4 py-2
+      text-green-700
+      font-medium
+      hover:bg-green-100
+      transition-all
+    "
+                    >
+                      <div className="h-56 p-3 overflow-hidden">
+                        <div className="bg-[#DCF8C6] mr-auto max-w-[70%] rounded-2xl p-4 shadow">
+                          <h4 className="font-semibold text-sm">
+                            {headerComponent?.text}
+                          </h4>
+
+                          <p className="text-xs mt-2 line-clamp-5">
+                            {bodyComponent?.text}
+                          </p>
+
+                          <p className="text-[12px] mt-3 text-gray-500">
+                            {footerComponent?.text}
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-2xl bg-slate-50 p-4 border">
-                      {headerComponent?.text && (
-                        <h4 className="font-semibold text-sm">
-                          {headerComponent.text}
-                        </h4>
-                      )}
-
-                      <p className="mt-3 text-sm text-slate-600 line-clamp-3">
-                        {bodyComponent?.text}
-                      </p>
-
-                      {footerComponent?.text && (
-                        <p className="mt-3 text-xs text-slate-400">
-                          {footerComponent.text}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-3 mt-6">
+                    <div className="p-4 flex justify-end">
                       <button
                         onClick={() => {
                           setSelectedTemplate(template);
                           setViewOpen(true);
                         }}
-                        className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold"
+                        className="
+    flex items-center gap-1
+    hover:bg-white
+    bg-slate-50
+    border border-slate-200
+    text-slate-800
+    cursor-pointer
+    px-5 py-3
+    rounded-2xl
+    font-semibold
+    hover:shadow-sm
+    shadow-md
+    transition-all duration-300
+    "
                       >
-                        View
+                        👁️
+                        <span>Preview</span>
                       </button>
                     </div>
                   </div>
@@ -1082,16 +1182,16 @@ return (
           <div className="relative w-full max-w-md">
             <button
               onClick={() => setViewOpen(false)}
-              className="absolute -top-5 right-0 text-white text-3xl"
+              className="absolute cursor-pointer -top-5 right-0 text-white text-3xl"
             >
               ×
             </button>
 
             <div className="p-3 shadow-2xl">
-              <div className="bg-[#e5ddd5] rounded-[32px] p-4 min-h-[550px] relative overflow-hidden">
+              <div className="bg-[#e5ddd5] rounded-[32px] p-4 h-[650px] flex flex-col overflow-hidden">
+                {" "}
                 <div className="absolute inset-0 opacity-5 bg-[url('https://i.imgur.com/7yUvePI.png')]" />
-
-                <div className="relative z-10">
+                <div className="relative z-10 flex flex-col h-full">
                   {/* WHATSAPP TOP HEADER */}
 
                   <div className="flex items-center justify-between bg-[#f0f2f5] px-4 py-3 border-b border-[#d1d7db] -mx-4 -mt-4 mb-4 rounded-t-[28px]">
@@ -1166,98 +1266,139 @@ return (
 
                   {/* MESSAGE */}
 
-                  <div className="flex items-start gap-2">
-                    <div className="max-w-[72%] bg-white rounded-[8px] rounded-tl-none px-3 py-2 shadow-sm relative">
-                      {/* HEADER */}
+                  {/* MESSAGE PREVIEW */}
+                  <div className="flex-1 overflow-y-auto scrollbar-none pt-4">
+                    <div className="flex justify-center">
+                      <div className="w-full max-w-[320px] -ml-16 bg-white rounded-2xl overflow-hidden shadow-md">
+                        {/* TEMPLATE IMAGE */}
+                        {isMediaTemplate && (
+                          <div className="w-full h-[220px] bg-gray-200 relative">
+                            <img
+                              src={
+                                selectedTemplate.imageUrl ||
+                                "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a"
+                              }
+                              alt="template"
+                              className="w-full h-full object-cover"
+                            />
 
-                      {selectedTemplate.components?.find(
-                        (c: any) => c.type === "HEADER",
-                      )?.text && (
-                        <h2 className="font-semibold text-[15px] text-[#111b21] mb-2">
-                          {
-                            selectedTemplate.components.find(
-                              (c: any) => c.type === "HEADER",
-                            )?.text
-                          }
-                        </h2>
-                      )}
+                            {/* Video Play Icon */}
+                            {headerComponent?.format === "VIDEO" && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-14 h-14 bg-black/50 rounded-full flex items-center justify-center">
+                                  ▶
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-                      {/* BODY */}
+                        {/* CONTENT */}
+                        <div className="p-4">
+                          {/* HEADER */}
+                          {selectedTemplate.components?.find(
+                            (c: any) => c.type === "HEADER",
+                          )?.text && (
+                            <h2 className="font-semibold text-[16px] text-[#111b21] mb-2">
+                              {
+                                selectedTemplate.components.find(
+                                  (c: any) => c.type === "HEADER",
+                                )?.text
+                              }
+                            </h2>
+                          )}
 
-                      <div className="text-[14px] leading-6 text-[#111b21] whitespace-pre-line break-words">
-                        {(
-                          selectedTemplate.components.find(
-                            (c: any) => c.type === "BODY",
-                          )?.text || ""
-                        )
-                          .split(/(\{\{\d+\}\})/g)
-                          .map((part: string, index: number) => {
-                            const match = part.match(/\{\{(\d+)\}\}/);
+                          {/* BODY */}
+                          <div className="text-[14px] leading-6 text-[#111b21] whitespace-pre-line">
+                            {(
+                              selectedTemplate.components.find(
+                                (c: any) => c.type === "BODY",
+                              )?.text || ""
+                            )
+                              .split(/(\{\{\d+\}\})/g)
+                              .map((part: string, index: number) => {
+                                const match = part.match(/\{\{(\d+)\}\}/);
 
-                            if (match) {
-                              const variableNumber = match[1];
+                                if (match) {
+                                  const variableNumber = match[1];
+                                  const variableName =
+                                    selectedTemplate.variables?.[
+                                      Number(variableNumber) - 1
+                                    ];
 
-                              const variableName =
-                                selectedTemplate.variables?.[
-                                  Number(variableNumber) - 1
-                                ];
+                                  return (
+                                    <span
+                                      key={index}
+                                      className="inline-flex bg-[#e7f3ff] text-[#027eb5] px-2 py-[2px] rounded-md text-[12px] font-medium mx-[2px]"
+                                    >
+                                      {previewValues[variableNumber] ||
+                                        variableName ||
+                                        `{{${variableNumber}}}`}
+                                    </span>
+                                  );
+                                }
 
-                              return (
+                                return <span key={index}>{part}</span>;
+                              })}
+                          </div>
+
+                          {/* FOOTER */}
+                          {selectedTemplate.components?.find(
+                            (c: any) => c.type === "FOOTER",
+                          )?.text && (
+                            <p className="text-[12px] text-[#667781] mt-3">
+                              {
+                                selectedTemplate.components.find(
+                                  (c: any) => c.type === "FOOTER",
+                                )?.text
+                              }
+                            </p>
+                          )}
+
+                          {/* BUTTONS */}
+                          <div className="mt-4 pt-3 space-y-2">
+                            {selectedTemplate.components
+                              ?.find((c: any) => c.type === "BUTTONS")
+                              ?.buttons?.map((btn: any, index: number) => (
                                 <button
                                   key={index}
-                                  className="inline-flex items-center gap-1 bg-[#e7f3ff] text-[#027eb5] px-2 py-[2px] rounded-md text-[12px] font-medium mx-[2px] hover:bg-[#d8ecff] transition"
+                                  className="w-full border rounded-lg py-2 text-[#00a884] font-medium hover:bg-[#f5f6f6]"
                                 >
-                                  {previewValues[variableNumber] ||
-                                    variableName ||
-                                    `{{${variableNumber}}}`}
+                                  {btn.text}
                                 </button>
-                              );
-                            }
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                            return <span key={index}>{part}</span>;
-                          })}
+                  {/* CHAT INPUT */}
+                  <div className="mt-auto bg-[#f0f2f5] rounded-2xl p-2">
+                    <div className="flex items-center gap-2">
+                      {/* Emoji */}
+                      <button className="text-[#54656f] text-xl">😊</button>
+
+                      {/* Input */}
+                      <div className="flex-1 bg-white rounded-full px-4 py-2 shadow-sm">
+                        <input
+                          type="text"
+                          placeholder="Type a message"
+                          className="w-full outline-none text-sm bg-transparent"
+                        />
                       </div>
 
-                      {/* FOOTER */}
-
-                      {selectedTemplate.components?.find(
-                        (c: any) => c.type === "FOOTER",
-                      )?.text && (
-                        <p className="text-[12px] text-[#667781] mt-3">
-                          {
-                            selectedTemplate.components.find(
-                              (c: any) => c.type === "FOOTER",
-                            )?.text
-                          }
-                        </p>
-                      )}
-
-                      {/* BUTTONS */}
-
-                      <div className="mt-4 border-t border-[#e9edef] pt-2 space-y-2">
-                        {selectedTemplate.components
-                          ?.find((c: any) => c.type === "BUTTONS")
-                          ?.buttons?.map((btn: any, index: number) => (
-                            <button
-                              key={index}
-                              className="w-full text-center text-[#00a884] text-[14px] font-medium py-2 hover:bg-[#f5f6f6] rounded-lg transition"
-                            >
-                              {btn.text}
-                            </button>
-                          ))}
-                      </div>
-
-                      {/* TIME */}
-
-                      <div className="flex justify-end items-center mt-1">
-                        <span className="text-[11px] text-[#667781]">
-                          12:45 PM
-                        </span>
-                      </div>
-
-                      {/* MESSAGE TAIL */}
-
-                      <div className="absolute top-0 -left-2 w-3 h-3 bg-white clip-tail" />
+                      {/* Send Button */}
+                      <button className="w-10 h-10 rounded-full bg-[#00a884] flex items-center justify-center text-white shadow">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-5 h-5"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M2 21L23 12 2 3v7l15 2-15 2z" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1447,69 +1588,67 @@ return (
                 />
 
                 <select
-  value={mediaType}
-onChange={(e) => {
-  setMediaType(e.target.value);
-  setMediaId("");
-  setUploadedFileName("");
-  setMediaError(null);
-}}
-  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
->
-  <option value="">Select Header Type</option>
+                  value={mediaType}
+                  onChange={(e) => {
+                    setMediaType(e.target.value);
+                    setMediaId("");
+                    setUploadedFileName("");
+                    setMediaError(null);
+                  }}
+                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+                >
+                  <option value="">Select Header Type</option>
 
-  <option value="TEXT">TEXT</option>
+                  <option value="TEXT">TEXT</option>
 
-  <option value="IMAGE">IMAGE</option>
+                  <option value="IMAGE">IMAGE</option>
 
-  <option value="DOCUMENT">DOCUMENT</option>
+                  <option value="DOCUMENT">DOCUMENT</option>
 
-  <option value="VIDEO">VIDEO</option>
-</select>
+                  <option value="VIDEO">VIDEO</option>
+                </select>
 
-{mediaType === "TEXT" && (
-  <input
-    type="text"
-    placeholder="Header"
-    value={header}
-    onChange={(e) => setHeader(e.target.value)}
-    className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-  />
-)}
+                {mediaType === "TEXT" && (
+                  <input
+                    type="text"
+                    placeholder="Header"
+                    value={header}
+                    onChange={(e) => setHeader(e.target.value)}
+                    className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+                  />
+                )}
 
-{(mediaType === "IMAGE" || mediaType === "VIDEO" || mediaType === "DOCUMENT") && (
-  <div className="space-y-3">
-    <input
-      type="file"
-      onChange={(e) => {
-        const file = e.target.files?.[0];
+                {(mediaType === "IMAGE" ||
+                  mediaType === "VIDEO" ||
+                  mediaType === "DOCUMENT") && (
+                  <div className="space-y-3">
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
 
-        if (file) {
-          handleMediaUpload(file);
-        }
-      }}
-      className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-    />
+                        if (file) {
+                          handleMediaUpload(file);
+                        }
+                      }}
+                      className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+                    />
 
-    {mediaLoading && (
-      <p className="text-sm text-slate-400">
-        Uploading...
-      </p>
-    )}
+                    {mediaLoading && (
+                      <p className="text-sm text-slate-400">Uploading...</p>
+                    )}
 
-    {mediaError && (
-      <p className="text-sm text-rose-500">
-        {mediaError}
-      </p>
-    )}
+                    {mediaError && (
+                      <p className="text-sm text-rose-500">{mediaError}</p>
+                    )}
 
-    {mediaId && (
-      <p className="text-sm text-green-500">
-        File uploaded successfully
-      </p>
-    )}
-  </div>
-)}
+                    {mediaId && (
+                      <p className="text-sm text-green-500">
+                        File uploaded successfully
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <textarea
                   rows={5}

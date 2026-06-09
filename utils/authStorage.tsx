@@ -20,12 +20,12 @@ export const setAccessToken = (token: string) => {
 
 export const getAccessToken = () => {
   if (accessToken) {
-    console.log("Using in-memory access token:", accessToken);
+    // console.log("Using in-memory access token:", accessToken);
      return accessToken;
   }
   if (typeof window !== "undefined") {
     const accessToken = localStorage.getItem("accessToken");
-    console.log("Using access token from localStorage:", accessToken);
+    // console.log("Using access token from localStorage:", accessToken);
     return accessToken;
   }
   return null;
