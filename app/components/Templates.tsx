@@ -1,9 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  BadgeCheck,
+  Eye,
+  FileText,
+  Hash,
+  Languages,
+  MessageSquareText,
+  Plus,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
 import { getUserId, getUsername } from "@/utils/authStorage";
-import { Eye } from "lucide-react";
 import convertNamedToPositional, {
   escapeRegExp,
 } from "@/utils/placeholderUtils";
@@ -139,6 +150,7 @@ export function Templates({ isDark }: TemplatesProps) {
   const [mediaLoading, setMediaLoading] = useState(false);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string>("");
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -273,6 +285,14 @@ export function Templates({ isDark }: TemplatesProps) {
     });
     fetchTemplates();
   }, [tenantId, createdBy, pagination.page]);
+
+  useEffect(() => {
+    return () => {
+      if (mediaPreviewUrl) {
+        URL.revokeObjectURL(mediaPreviewUrl);
+      }
+    };
+  }, [mediaPreviewUrl]);
 
   const handleMediaUpload = async (file: File) => {
     console.log("handleMediaUpload called", {
@@ -822,6 +842,7 @@ export function Templates({ isDark }: TemplatesProps) {
       setButtons([]);
       setMediaId("");
       setUploadedFileName("");
+      setMediaPreviewUrl("");
       setMediaType("");
       setCategory("UTILITY");
       setLanguages(["en_US"]);
@@ -1178,7 +1199,7 @@ export function Templates({ isDark }: TemplatesProps) {
       </div>
 
       {viewOpen && selectedTemplate && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex justify-center items-center p-5">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-5">
           <div className="relative w-full max-w-md">
             <button
               onClick={() => setViewOpen(false)}
@@ -1188,7 +1209,7 @@ export function Templates({ isDark }: TemplatesProps) {
             </button>
 
             <div className="p-3 shadow-2xl">
-              <div className="bg-[#e5ddd5] rounded-[32px] p-4 h-[650px] flex flex-col overflow-hidden">
+              <div className="flex h-162.5 flex-col overflow-hidden rounded-4xl bg-[#e5ddd5] p-4">
                 {" "}
                 <div className="absolute inset-0 opacity-5 bg-[url('https://i.imgur.com/7yUvePI.png')]" />
                 <div className="relative z-10 flex flex-col h-full">
@@ -1272,7 +1293,7 @@ export function Templates({ isDark }: TemplatesProps) {
                       <div className="w-full max-w-[320px] -ml-16 bg-white rounded-2xl overflow-hidden shadow-md">
                         {/* TEMPLATE IMAGE */}
                         {isMediaTemplate && (
-                          <div className="w-full h-[220px] bg-gray-200 relative">
+                          <div className="relative h-55 w-full bg-gray-200">
                             <img
                               src={
                                 selectedTemplate.imageUrl ||
@@ -1329,7 +1350,7 @@ export function Templates({ isDark }: TemplatesProps) {
                                   return (
                                     <span
                                       key={index}
-                                      className="inline-flex bg-[#e7f3ff] text-[#027eb5] px-2 py-[2px] rounded-md text-[12px] font-medium mx-[2px]"
+                                      className="mx-0.5 inline-flex rounded-md bg-[#e7f3ff] px-2 py-0.5 text-[12px] font-medium text-[#027eb5]"
                                     >
                                       {previewValues[variableNumber] ||
                                         variableName ||
@@ -1411,355 +1432,548 @@ export function Templates({ isDark }: TemplatesProps) {
       {/* POPUP */}
 
       {open && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex  justify-center items-center p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <div
-            className={`w-full overflow-y-scroll scrollbar-thin h-full max-w-6xl  rounded-4xl p-6 ${sectionStyle}`}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Create Template</h2>
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+          />
 
-              <button onClick={() => setOpen(false)} className="text-2xl">
-                ×
-              </button>
+          <div
+            className={`relative z-10 flex w-full max-w-7xl max-h-[92vh] flex-col overflow-hidden rounded-4xl border shadow-2xl ${sectionStyle}`}
+          >
+            <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-r from-[#128C7E] via-[#25D366] to-[#20BD5A] px-6 py-6 sm:px-8">
+              <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+              <div className="absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+
+              <div className="relative flex items-start justify-between gap-6">
+                <div className="max-w-3xl space-y-4 text-white">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur-sm">
+                    <Sparkles className="h-4 w-4" />
+                    WhatsApp Template Builder
+                  </div>
+
+                  <div>
+                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                      Create Template
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
+                      Build a reusable message template with structured header,
+                      body, footer, and quick-reply actions that match the
+                      dashboard’s WhatsApp-first style.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-xs font-medium text-white/95">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-black/15 px-3 py-2 backdrop-blur-sm">
+                      <BadgeCheck className="h-4 w-4" />
+                      Tenant {tenantId || "loading..."}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-black/15 px-3 py-2 backdrop-blur-sm">
+                      <MessageSquareText className="h-4 w-4" />
+                      Preview sync
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-black/15 px-3 py-2 backdrop-blur-sm">
+                      <FileText className="h-4 w-4" />
+                      Policy-aware fields
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setOpen(false)}
+                  className="rounded-full cursor-pointer border border-white/20 bg-white/10 p-2 text-white transition hover:bg-white/20"
+                  aria-label="Close template editor"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 h-[85vh] p-2">
-              {" "}
-              <div className="space-y-5">
-                <input
-                  type="text"
-                  placeholder="Tenant ID"
-                  value={tenantId}
-                  disabled
-                  readOnly
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle} bg-slate-100 cursor-not-allowed`}
-                />
-
-                <input
-                  type="text"
-                  placeholder="Template Name (lowercase letters, numbers, underscores only)"
-                  value={templateName}
-                  onChange={(e) => {
-                    const normalized = e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9_]/g, "_");
-                    setTemplateName(normalized);
-                    setTemplateNameError(null);
-                  }}
-                  pattern="[a-z0-9_]+"
-                  title="Use lowercase letters, numbers, and underscores only"
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                />
-                {templateNameError && (
-                  <p className="text-sm text-rose-500 mt-2">
-                    {templateNameError}
-                  </p>
-                )}
-
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Template Type</label>
-
-                  <div className="flex items-center gap-3">
-                    {/* WITHOUT */}
-
-                    <button
-                      type="button"
-                      onClick={() => setVariableMode("WITHOUT_VARIABLES")}
-                      className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
-                        variableMode === "WITHOUT_VARIABLES"
-                          ? "bg-sky-500 text-white"
-                          : isDark
-                            ? "bg-slate-900 text-slate-300"
-                            : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      Without Variables
-                    </button>
-
-                    {/* WITH */}
-
-                    <button
-                      type="button"
-                      onClick={() => setVariableMode("WITH_VARIABLES")}
-                      className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
-                        variableMode === "WITH_VARIABLES"
-                          ? "bg-violet-500 text-white"
-                          : isDark
-                            ? "bg-slate-900 text-slate-300"
-                            : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      With Variables
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                  >
-                    <option value="UTILITY">UTILITY</option>
-                    <option value="MARKETING">MARKETING</option>
-                    <option value="AUTHENTICATION">AUTHENTICATION</option>
-                  </select>
-
-                  <select
-                    value={parameterFormat}
-                    onChange={(e) =>
-                      setParameterFormat(
-                        e.target.value as "POSITIONAL" | "NAMED",
-                      )
-                    }
-                    className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                  >
-                    <option value="POSITIONAL">POSITIONAL</option>
-
-                    <option value="NAMED">NAMED</option>
-                  </select>
-                </div>
-
-                {variableMode === "WITH_VARIABLES" && (
-                  <p className="text-sm text-slate-500 mt-2">
-                    {parameterFormat === "POSITIONAL"
-                      ? "Use {{1}}, {{2}} format."
-                      : "Use {{customer_name}}, {{order_id}} format."}
-                  </p>
-                )}
-
-                <div className="space-y-3 mt-4">
-                  <div className="flex items-center gap-3">
-                    <select
-                      value={languageOption}
-                      onChange={(e) => setLanguageOption(e.target.value)}
-                      className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                    >
-                      <option value="en_US">en_US</option>
-                      <option value="hi_IN">hi_IN</option>
-                      <option value="es_ES">es_ES</option>
-                      <option value="fr_FR">fr_FR</option>
-                      <option value="de_DE">de_DE</option>
-                      <option value="pt_BR">pt_BR</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!languages.includes(languageOption)) {
-                          setLanguages([...languages, languageOption]);
-                        }
-                      }}
-                      className="bg-sky-500 text-white px-5 py-3 rounded-xl"
-                    >
-                      Add
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {languages.map((lang) => (
-                      <span
-                        key={lang}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-sm text-slate-700"
-                      >
-                        {lang}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setLanguages(
-                              languages.filter((item) => item !== lang),
-                            )
-                          }
-                          className="text-slate-500 hover:text-slate-900"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <input
-                  type="text"
-                  readOnly
-                  placeholder="Created By"
-                  value={createdBy}
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle} opacity-80 mt-4`}
-                />
-
-                <select
-                  value={mediaType}
-                  onChange={(e) => {
-                    setMediaType(e.target.value);
-                    setMediaId("");
-                    setUploadedFileName("");
-                    setMediaError(null);
-                  }}
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+            <div className="grid flex-1 gap-6 overflow-y-auto p-6 sm:p-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
+              <div className="space-y-6">
+                <section
+                  className={`rounded-[1.75rem] border p-5 shadow-sm ${isDark ? "border-slate-700/80 bg-slate-950/60" : "border-slate-200 bg-white"}`}
                 >
-                  <option value="">Select Header Type</option>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-2xl bg-[#25D366]/10 p-3 text-[#25D366]">
+                      <Hash className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Template Basics</h3>
+                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        Name it, classify it, and define the parameter format.
+                      </p>
+                    </div>
+                  </div>
 
-                  <option value="TEXT">TEXT</option>
-
-                  <option value="IMAGE">IMAGE</option>
-
-                  <option value="DOCUMENT">DOCUMENT</option>
-
-                  <option value="VIDEO">VIDEO</option>
-                </select>
-
-                {mediaType === "TEXT" && (
-                  <input
-                    type="text"
-                    placeholder="Header"
-                    value={header}
-                    onChange={(e) => setHeader(e.target.value)}
-                    className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                  />
-                )}
-
-                {(mediaType === "IMAGE" ||
-                  mediaType === "VIDEO" ||
-                  mediaType === "DOCUMENT") && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <input
-                      type="file"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-
-                        if (file) {
-                          handleMediaUpload(file);
-                        }
-                      }}
-                      className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
+                      type="text"
+                      placeholder="Tenant ID"
+                      value={tenantId}
+                      disabled
+                      readOnly
+                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle} cursor-not-allowed opacity-90`}
                     />
 
-                    {mediaLoading && (
-                      <p className="text-sm text-slate-400">Uploading...</p>
-                    )}
-
-                    {mediaError && (
-                      <p className="text-sm text-rose-500">{mediaError}</p>
-                    )}
-
-                    {mediaId && (
-                      <p className="text-sm text-green-500">
-                        File uploaded successfully
+                    <input
+                      type="text"
+                      placeholder="Template name (lowercase letters, numbers, underscores only)"
+                      value={templateName}
+                      onChange={(e) => {
+                        const normalized = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9_]/g, "_");
+                        setTemplateName(normalized);
+                        setTemplateNameError(null);
+                      }}
+                      pattern="[a-z0-9_]+"
+                      title="Use lowercase letters, numbers, and underscores only"
+                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                    />
+                    {templateNameError && (
+                      <p className="flex items-center gap-2 text-sm text-rose-500">
+                        <AlertTriangle className="h-4 w-4" />
+                        {templateNameError}
                       </p>
                     )}
-                  </div>
-                )}
 
-                <textarea
-                  rows={5}
-                  placeholder="Body"
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      >
+                        <option value="UTILITY">UTILITY</option>
+                        <option value="MARKETING">MARKETING</option>
+                        <option value="AUTHENTICATION">AUTHENTICATION</option>
+                      </select>
 
-                {showNoVariableWarning && (
-                  <p className="text-sm text-amber-500 mt-2">
-                    You selected "Without Variables", but the body contains
-                    placeholders. Remove them or switch to "With Variables".
-                  </p>
-                )}
+                      <select
+                        value={parameterFormat}
+                        onChange={(e) =>
+                          setParameterFormat(
+                            e.target.value as "POSITIONAL" | "NAMED",
+                          )
+                        }
+                        className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      >
+                        <option value="POSITIONAL">POSITIONAL</option>
+                        <option value="NAMED">NAMED</option>
+                      </select>
+                    </div>
 
-                {/* PREVIEW VALUES */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium">Template Type</label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => setVariableMode("WITHOUT_VARIABLES")}
+                          className={`rounded-2xl px-4 py-4 text-left text-sm font-semibold transition-all ${variableMode === "WITHOUT_VARIABLES"
+                              ? "border border-[#25D366]/30 bg-[#25D366]/10 text-[#128C7E] shadow-sm"
+                              : isDark
+                                ? "border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-600"
+                                : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
+                            }`}
+                        >
+                          <div className="mb-1 text-xs uppercase tracking-[0.2em] opacity-70">
+                            Simple
+                          </div>
+                          <div>Without Variables</div>
+                        </button>
 
-                {variableMode === "WITH_VARIABLES" &&
-                  Array.from(new Set(extractVariables(body))).length > 0 && (
-                    <div className="space-y-4 mt-5">
-                      <h3 className="font-semibold">Preview Values</h3>
-
-                      {Array.from(new Set(extractVariables(body))).map(
-                        (variable) => (
-                          <input
-                            key={variable}
-                            type="text"
-                            placeholder={`Sample value for {{${variable}}}`}
-                            value={previewValues[variable] || ""}
-                            onChange={(e) =>
-                              setPreviewValues({
-                                ...previewValues,
-                                [variable]: e.target.value,
-                              })
-                            }
-                            className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                          />
-                        ),
+                        <button
+                          type="button"
+                          onClick={() => setVariableMode("WITH_VARIABLES")}
+                          className={`rounded-2xl px-4 py-4 text-left text-sm font-semibold transition-all ${variableMode === "WITH_VARIABLES"
+                              ? "border border-sky-400/40 bg-sky-500/10 text-sky-600 shadow-sm"
+                              : isDark
+                                ? "border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-600"
+                                : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
+                            }`}
+                        >
+                          <div className="mb-1 text-xs uppercase tracking-[0.2em] opacity-70">
+                            Dynamic
+                          </div>
+                          <div>With Variables</div>
+                        </button>
+                      </div>
+                      {variableMode === "WITH_VARIABLES" && (
+                        <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          {parameterFormat === "POSITIONAL"
+                            ? "Use {{1}}, {{2}} placeholders and sample values below."
+                            : "Use named placeholders like {{customer_name}} and {{order_id}}."}
+                        </p>
                       )}
                     </div>
-                  )}
 
-                <input
-                  type="text"
-                  placeholder="Footer"
-                  value={footer}
-                  onChange={(e) => setFooter(e.target.value)}
-                  className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                />
-
-                <div className="space-y-3">
-                  {buttons.map((btn, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      value={btn}
-                      onChange={(e) => {
-                        const updated = [...buttons];
-
-                        updated[index] = e.target.value;
-
-                        setButtons(updated);
-                      }}
-                      className={`w-full border rounded-xl px-4 py-3 ${inputStyle}`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setButtons([...buttons, ""])}
-                  className="bg-blue-500 text-white px-5 py-2 rounded-lg"
-                >
-                  Add Button
-                </button>
-
-                <button
-                  onClick={handleSave}
-                  disabled={!templateName || !isTemplateNameValid}
-                  className={`w-full py-4 rounded-2xl font-bold text-white ${
-                    !templateName || !isTemplateNameValid
-                      ? "bg-slate-400 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
-                >
-                  Submit Template
-                </button>
-                {submitMessage && (
-                  <p className="text-sm text-slate-300 mt-2">{submitMessage}</p>
-                )}
-              </div>
-              <div className="flex justify-center">
-                <div className="w-full max-w-90 bg-[#ece5dd] rounded-3xl p-4 shadow-2xl">
-                  <div className="bg-white rounded-3xl p-5">
-                    <h2 className="font-bold text-lg">{header}</h2>
-
-                    <p className="mt-4 text-gray-700 whitespace-pre-line">
-                      {getPreviewBody()}
-                    </p>
-
-                    <p className="mt-4 text-sm text-gray-500">{footer}</p>
-
-                    <div className="mt-5 space-y-3">
-                      {buttons.map((btn, index) => (
-                        <button
-                          key={index}
-                          className="w-full border border-green-500 text-green-600 py-2 rounded-xl"
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Languages className="h-4 w-4 text-[#25D366]" />
+                        <label className="text-sm font-medium">Languages</label>
+                      </div>
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <select
+                          value={languageOption}
+                          onChange={(e) => setLanguageOption(e.target.value)}
+                          className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
                         >
-                          {btn}
+                          <option value="en_US">en_US</option>
+                          <option value="hi_IN">hi_IN</option>
+                          <option value="es_ES">es_ES</option>
+                          <option value="fr_FR">fr_FR</option>
+                          <option value="de_DE">de_DE</option>
+                          <option value="pt_BR">pt_BR</option>
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!languages.includes(languageOption)) {
+                              setLanguages([...languages, languageOption]);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#25D366]/20 transition hover:brightness-110"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add
                         </button>
-                      ))}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {languages.map((lang) => (
+                          <span
+                            key={lang}
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm ${isDark ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-700"}`}
+                          >
+                            {lang}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setLanguages(
+                                  languages.filter((item) => item !== lang),
+                                )
+                              }
+                              className="text-slate-500 transition hover:text-slate-900"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="Created By"
+                      value={createdBy}
+                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle} opacity-80`}
+                    />
+                  </div>
+                </section>
+
+                <section
+                  className={`rounded-[1.75rem] border p-5 shadow-sm ${isDark ? "border-slate-700/80 bg-slate-950/60" : "border-slate-200 bg-white"}`}
+                >
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-2xl bg-sky-500/10 p-3 text-sky-500">
+                      <MessageSquareText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Message Content</h3>
+                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        Define the header, body, footer, and buttons that show
+                        in the final template.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <select
+                      value={mediaType}
+                      onChange={(e) => {
+                        setMediaType(e.target.value);
+                        setMediaId("");
+                        setUploadedFileName("");
+                        setMediaPreviewUrl("");
+                        setMediaError(null);
+                      }}
+                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                    >
+                      <option value="">Select Header Type</option>
+                      <option value="TEXT">TEXT</option>
+                      <option value="IMAGE">IMAGE</option>
+                      <option value="DOCUMENT">DOCUMENT</option>
+                      <option value="VIDEO">VIDEO</option>
+                    </select>
+
+                    {mediaType === "TEXT" && (
+                      <input
+                        type="text"
+                        placeholder="Header"
+                        value={header}
+                        onChange={(e) => setHeader(e.target.value)}
+                        className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      />
+                    )}
+
+                    {(mediaType === "IMAGE" ||
+                      mediaType === "VIDEO" ||
+                      mediaType === "DOCUMENT") && (
+                      <div className={`rounded-2xl border p-4 ${isDark ? "border-slate-700 bg-slate-900/70" : "border-slate-200 bg-slate-50"}`}>
+                        <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+                          <Eye className="h-4 w-4 text-[#25D366]" />
+                          Upload header media
+                        </div>
+                        <input
+                          type="file"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+
+                            if (file) {
+                              const previewUrl = URL.createObjectURL(file);
+                              setMediaPreviewUrl(previewUrl);
+                              handleMediaUpload(file);
+                            }
+                          }}
+                          className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                        />
+
+                        {uploadedFileName && (
+                          <p className={`mt-3 text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                            Selected file: {uploadedFileName}
+                          </p>
+                        )}
+                        {mediaLoading && (
+                          <p className="mt-2 text-sm text-slate-400">Uploading...</p>
+                        )}
+
+                        {mediaError && (
+                          <p className="mt-2 text-sm text-rose-500">{mediaError}</p>
+                        )}
+
+                        {mediaId && (
+                          <p className="mt-2 text-sm text-emerald-500">
+                            File uploaded successfully
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <textarea
+                      rows={6}
+                      placeholder="Body"
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                    />
+
+                    {showNoVariableWarning && (
+                      <p className="rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+                        You selected &quot;Without Variables&quot;, but the body contains
+                        placeholders. Remove them or switch to &quot;With Variables&quot;.
+                      </p>
+                    )}
+
+                    {variableMode === "WITH_VARIABLES" &&
+                      Array.from(new Set(extractVariables(body))).length > 0 && (
+                        <div className={`rounded-2xl border p-4 ${isDark ? "border-slate-700 bg-slate-900/70" : "border-slate-50 bg-slate-50"}`}>
+                          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                            <Hash className="h-4 w-4 text-sky-500" />
+                            Preview values
+                          </div>
+
+                          <div className="space-y-3">
+                            {Array.from(new Set(extractVariables(body))).map(
+                              (variable) => (
+                                <input
+                                  key={variable}
+                                  type="text"
+                                  placeholder={`Sample value for {{${variable}}}`}
+                                  value={previewValues[variable] || ""}
+                                  onChange={(e) =>
+                                    setPreviewValues({
+                                      ...previewValues,
+                                      [variable]: e.target.value,
+                                    })
+                                  }
+                                  className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                                />
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    <input
+                      type="text"
+                      placeholder="Footer"
+                      value={footer}
+                      onChange={(e) => setFooter(e.target.value)}
+                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                    />
+
+                    <div className={`space-y-3 rounded-2xl border p-4 ${isDark ? "border-slate-700 bg-slate-900/70" : "border-slate-200 bg-slate-50"}`}>
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h4 className="text-sm font-semibold">Buttons</h4>
+                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            Add quick replies for the template footer.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setButtons([...buttons, ""])}
+                          className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add button
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {buttons.map((btn, index) => (
+                          <input
+                            key={index}
+                            type="text"
+                            value={btn}
+                            onChange={(e) => {
+                              const updated = [...buttons];
+
+                              updated[index] = e.target.value;
+
+                              setButtons(updated);
+                            }}
+                            placeholder={`Button ${index + 1}`}
+                            className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <div className={`rounded-[1.75rem] border p-5 shadow-sm ${isDark ? "border-slate-700/80 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold">Ready to submit</h3>
+                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        Review the preview panel before saving the template.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSave}
+                      disabled={!templateName || !isTemplateNameValid}
+                      className={`inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-all ${!templateName || !isTemplateNameValid
+                          ? "cursor-not-allowed bg-slate-400"
+                          : "bg-linear-to-r from-[#128C7E] to-[#25D366] shadow-lg shadow-[#25D366]/20 hover:brightness-110"
+                        }`}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Submit Template
+                    </button>
+                  </div>
+
+                  {submitMessage && (
+                    <p className="mt-4 rounded-2xl border border-slate-500/10 bg-slate-500/5 px-4 py-3 text-sm">
+                      {submitMessage}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="lg:sticky lg:top-0">
+                <div className={`rounded-4xl border p-4 shadow-xl ${isDark ? "border-slate-700/80 bg-slate-950/70" : "border-slate-200 bg-slate-100"}`}>
+                  <div className="mb-4 flex items-center justify-between gap-3 px-2 pt-1">
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        Live Preview
+                      </p>
+                      <h3 className="mt-1 text-lg font-semibold">WhatsApp message</h3>
+                    </div>
+
+                    <span className="rounded-full bg-[#25D366]/10 px-3 py-1 text-xs font-semibold text-[#128C7E]">
+                      Real-time
+                    </span>
+                  </div>
+
+                  <div className="rounded-4xl bg-[#E5DDD5] p-4 shadow-inner">
+                    <div className="overflow-hidden rounded-[1.75rem] bg-white shadow-2xl">
+                      <div className="bg-[#075E54] px-4 py-4 text-white">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <h4 className="text-sm font-semibold">
+                              {templateName || "New Template"}
+                            </h4>
+                            <p className="mt-1 text-xs text-white/80">
+                              {category} • {languages.join(", ")}
+                            </p>
+                          </div>
+                          <div className="rounded-full bg-black/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                            {mediaType || "HEADER"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#ECE5DD] px-4 py-5">
+                        <div className="max-w-[92%] rounded-3xl rounded-tl-md bg-white px-4 py-3 shadow-sm">
+                          {mediaType === "TEXT" && header && (
+                            <h4 className="mb-2 text-sm font-semibold text-[#111b21]">
+                              {header}
+                            </h4>
+                          )}
+
+                          {(mediaType === "IMAGE" ||
+                            mediaType === "VIDEO" ||
+                            mediaType === "DOCUMENT") && (
+                            <div className="mb-3 overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-center text-xs text-slate-500">
+                              {mediaType === "IMAGE" && mediaPreviewUrl ? (
+                                <img
+                                  src={mediaPreviewUrl}
+                                  alt={uploadedFileName || "Selected header media preview"}
+                                  className="h-44 w-full object-cover"
+                                />
+                              ) : mediaType === "VIDEO" && mediaPreviewUrl ? (
+                                <video
+                                  src={mediaPreviewUrl}
+                                  controls
+                                  className="h-44 w-full bg-black object-contain"
+                                />
+                              ) : (
+                                <div className="flex h-44 w-full items-center justify-center px-4">
+                                  {uploadedFileName || "Uploaded header media will appear here"}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <p className="whitespace-pre-line text-sm leading-6 text-[#111b21]">
+                            {getPreviewBody() || "Your template body preview will appear here."}
+                          </p>
+
+                          {footer && (
+                            <p className="mt-3 text-xs text-[#667781]">
+                              {footer}
+                            </p>
+                          )}
+
+                          {buttons.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                              {buttons.map((btn, index) => (
+                                <button
+                                  key={index}
+                                  className="w-full rounded-2xl border border-[#25D366]/30 px-4 py-2.5 text-sm font-medium text-[#128C7E] transition hover:bg-[#f5f6f6]"
+                                >
+                                  {btn || `Button ${index + 1}`}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
