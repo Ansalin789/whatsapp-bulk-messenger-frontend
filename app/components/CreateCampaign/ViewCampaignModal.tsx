@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { getAccessToken, getUserId } from "@/lib/auth";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface ViewCampaignModalProps {
   isDark: boolean;
@@ -68,6 +70,7 @@ export function ViewCampaignModal({
     hasNextPage: false,
     hasPreviousPage: false,
   });
+  
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [viewError, setViewError] = useState("");
   const [templateError, setTemplateError] = useState("");
@@ -174,7 +177,6 @@ export function ViewCampaignModal({
       toastTimerRef.current = null;
     }
   };
- 
 
   useEffect(() => {
     if (!isOpen) {
@@ -196,7 +198,7 @@ export function ViewCampaignModal({
 
       try {
         const campaignResponse = await fetch(
-          `http://localhost:5000/campaign/v1/${campaignId}`,
+          `https://apiwhatsapp.blackstoneinfomaticstech.com/campaign/v1/${campaignId}`,
           {
             method: "GET",
             headers: {
@@ -214,14 +216,12 @@ export function ViewCampaignModal({
 
         const campaignData = await parseResponseBody(campaignResponse);
         if (typeof campaignData === "string") {
-          throw new Error(
-            `Failed to parse campaign response: ${campaignData}`,
-          );
+          throw new Error(`Failed to parse campaign response: ${campaignData}`);
         }
         setSelectedCampaign(campaignData?.data || campaignData);
 
         const templateResponse = await fetch(
-          `http://localhost:5000/templates/v1/getall?page=${templatePagination.page}&limit=${templatePagination.limit}&status=APPROVED`,
+          `https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/getall?page=${templatePagination.page}&limit=${templatePagination.limit}&status=APPROVED`,
           {
             method: "GET",
             headers: {
@@ -250,7 +250,8 @@ export function ViewCampaignModal({
           page: templateData?.pagination?.page || prev.page,
           limit: templateData?.pagination?.limit || prev.limit,
           totalPages: templateData?.pagination?.totalPages || prev.totalPages,
-          hasNextPage: templateData?.pagination?.hasNextPage ?? prev.hasNextPage,
+          hasNextPage:
+            templateData?.pagination?.hasNextPage ?? prev.hasNextPage,
           hasPreviousPage:
             templateData?.pagination?.hasPreviousPage ?? prev.hasPreviousPage,
         }));
@@ -321,11 +322,11 @@ export function ViewCampaignModal({
 
     const campaignIdValue = selectedCampaign._id || selectedCampaign.id;
     const templateId = selectedTemplate.id || selectedTemplate._id;
-      const token = getAccessToken();
+    const token = getAccessToken();
 
     try {
       const response = await fetch(
-        "http://localhost:5000/campaignrun/v1/create",
+        "https://apiwhatsapp.blackstoneinfomaticstech.com/campaignrun/v1/create",
         {
           method: "POST",
           headers: {
@@ -424,7 +425,7 @@ export function ViewCampaignModal({
     setNextLoading(true);
 
     try {
-      const uploadUrl = `http://localhost:5000/campaigncontact/v1/${campaignRunId}/upload`;
+      const uploadUrl = `https://apiwhatsapp.blackstoneinfomaticstech.com/campaigncontact/v1/${campaignRunId}/upload`;
       let response: Response;
 
       if (uploadFile) {
@@ -520,7 +521,9 @@ export function ViewCampaignModal({
     setMediaMessage("");
 
     if (!mediaFile) {
-      setMediaError("Please choose an image, video, or document before uploading.");
+      setMediaError(
+        "Please choose an image, video, or document before uploading.",
+      );
       return;
     }
     if (!campaignId) {
@@ -531,7 +534,7 @@ export function ViewCampaignModal({
     setMediaLoading(true);
 
     try {
-      const uploadUrl = `http://localhost:5000/campaignmedia/v1/${campaignRunId}/upload`;
+      const uploadUrl = `https://apiwhatsapp.blackstoneinfomaticstech.com/campaignmedia/v1/${campaignRunId}/upload`;
       const formData = new FormData();
       const userId = getUserId();
       formData.append("file", mediaFile);
@@ -603,7 +606,7 @@ export function ViewCampaignModal({
 
     try {
       const query = mediaUploadInfo?.id;
-      const deleteUrl = `http://localhost:5000/campaignmedia/v1/${campaignRunId}/${query}`;
+      const deleteUrl = `https://apiwhatsapp.blackstoneinfomaticstech.com/campaignmedia/v1/${campaignRunId}/${query}`;
       const response = await fetch(deleteUrl, {
         method: "DELETE",
         headers: {
@@ -654,7 +657,7 @@ export function ViewCampaignModal({
 
     try {
       const response = await fetch(
-        `http://localhost:5000/campaigncontact/v1/${campaignRunId}`,
+        `https://apiwhatsapp.blackstoneinfomaticstech.com/campaigncontact/v1/${campaignRunId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${getAccessToken()}` },
@@ -717,7 +720,7 @@ export function ViewCampaignModal({
     setLaunchLoading(true);
 
     try {
-      const launchUrl = `http://localhost:5000/campaignrun/v1/${campaignRunId}/launch`;
+      const launchUrl = `https://apiwhatsapp.blackstoneinfomaticstech.com/campaignrun/v1/${campaignRunId}/launch`;
       const payload = options?.scheduledAt
         ? { runType: "SCHEDULED", scheduledAt: options.scheduledAt }
         : { runType: "INSTANT" };
@@ -775,13 +778,24 @@ export function ViewCampaignModal({
   );
   const displayTemplates = approvedTemplates;
   const currentStep = viewStep === "selectTemplate" ? 1 : 2;
-  const startIndex = displayTemplates.length === 0
-    ? 0
-    : (templatePagination.page - 1) * templatePagination.limit + 1;
+  const startIndex =
+    displayTemplates.length === 0
+      ? 0
+      : (templatePagination.page - 1) * templatePagination.limit + 1;
   const endIndex = Math.min(
     templatePagination.total,
     templatePagination.page * templatePagination.limit,
   );
+
+  const headerFormat =
+    selectedTemplate?.components?.find((c: any) => c.type === "HEADER")
+      ?.format || "";
+
+  const showMediaUpload = ["IMAGE", "VIDEO"].includes(
+    headerFormat.toUpperCase(),
+  );
+
+  const minDateTime = new Date().toISOString().slice(0, 16);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -917,76 +931,84 @@ export function ViewCampaignModal({
                           .filter(Boolean)
                           .join(" ")}
                       >
-                      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-sky-500/10 blur-3xl" />
-                      <div className="flex flex-wrap items-center gap-10 w-full">
-                        <span className="rounded-sm border bg-sky-500/10 px-3 py-1 text-[10px] font-medium text-sky-400">
-                          {template.category}
-                        </span>
-                        <span
-                          className={`rounded-sm border px-3 py-1 text-[10px] font-medium ${template.status === "APPROVED" ? "bg-emerald-500/10 text-emerald-400" : template.status === "PENDING" ? "bg-amber-500/10 text-amber-400" : "bg-red-500/10 text-red-400"}`}
-                        >
-                          {template.status}
-                        </span>
-                      </div>
-                      <div className="justify-between h-full flex flex-col p-2 py-3">
-                        <div className="mt-5">
-                          <h4 className="font-semibold text-base">
-                            {template.name}
-                          </h4>
-                          <p
-                            className={`mt-3 line-clamp-4 text-xs leading-6 ${
-                              isDark ? "text-slate-400" : "text-slate-500"
-                            }`}
+                        <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-sky-500/10 blur-3xl" />
+                        <div className="flex  items-center gap-3 w-full">
+                          <span className="rounded-sm border bg-sky-500/10 px-2 py-1 text-[9px] font-medium text-sky-400">
+                            {template.category}
+                          </span>
+                          <span className="rounded-sm border bg-red-500/10 px-2 py-1 text-[9px] font-medium text-red-400">
+                            {template.components?.[0]?.format}
+                          </span>
+                          <span
+                            className={`rounded-sm border px-2 py-1 text-[9px] font-medium ${template.status === "APPROVED" ? "bg-emerald-500/10 text-emerald-400" : template.status === "PENDING" ? "bg-amber-500/10 text-amber-400" : "bg-red-500/10 text-red-400"}`}
                           >
-                            {template.components?.find(
-                              (c: any) => c.type === "BODY",
-                            )?.text || "No preview available"}
-                          </p>
+                            {template.status}
+                          </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedTemplate(template);
-                              setPreviewOpen(true);
-                            }}
-                            className={`rounded-lg border px-3 py-1 cursor-pointer text-xs font-semibold transition ${
-                              isDark
-                                ? "border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                            }`}
-                          >
-                            Preview
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedTemplate(template);
-                            }}
-                            className={`rounded-lg px-3 py-1 text-xs cursor-pointer font-semibold text-white transition-all duration-300 ${
-                              selectedTemplate?.id === template.id
-                                ? "bg-emerald-500 hover:scale-105 shadow-lg shadow-emerald-500/20"
-                                : "bg-gradient-to-r from-sky-500 to-indigo-500 hover:scale-105 hover:brightness-110"
-                            }`}
-                          >
-                            {selectedTemplate?.id === template.id
-                              ? "Selected ✓"
-                              : "Select"}
-                          </button>
+                        <div className="justify-between h-full flex flex-col p-2 py-3">
+                          <div className="mt-5">
+                            <h4 className="font-semibold text-base">
+                              {template.name}
+                            </h4>
+                            <p
+                              className={`mt-3 line-clamp-4 text-xs leading-6 ${
+                                isDark ? "text-slate-400" : "text-slate-500"
+                              }`}
+                            >
+                              {template.components?.find(
+                                (c: any) => c.type === "BODY",
+                              )?.text || "No preview available"}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTemplate(template);
+                                setPreviewOpen(true);
+                              }}
+                              className={`rounded-lg border px-3 py-1 cursor-pointer text-xs font-semibold transition ${
+                                isDark
+                                  ? "border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              Preview
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTemplate(template);
+                              }}
+                              className={`rounded-lg px-3 py-1 text-xs cursor-pointer font-semibold text-white transition-all duration-300 ${
+                                selectedTemplate?.id === template.id
+                                  ? "bg-emerald-500 hover:scale-105 shadow-lg shadow-emerald-500/20"
+                                  : "bg-gradient-to-r from-sky-500 to-indigo-500 hover:scale-105 hover:brightness-110"
+                              }`}
+                            >
+                              {selectedTemplate?.id === template.id
+                                ? "Selected ✓"
+                                : "Select"}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
                 {templatePagination.totalPages > 1 && (
                   <div
                     className={`mt-6 flex flex-col gap-3 rounded-3xl border p-4 ${
-                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                      isDark
+                        ? "border-slate-700 bg-slate-900"
+                        : "border-slate-200 bg-slate-50"
                     }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                        Showing {startIndex}–{endIndex} of {templatePagination.total} approved templates
+                      <p
+                        className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                      >
+                        Showing {startIndex}–{endIndex} of{" "}
+                        {templatePagination.total} approved templates
                       </p>
                       <div className="flex items-center gap-2">
                         <button
@@ -1002,8 +1024,11 @@ export function ViewCampaignModal({
                         >
                           ← Prev
                         </button>
-                        <span className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                          {templatePagination.page} / {templatePagination.totalPages}
+                        <span
+                          className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}
+                        >
+                          {templatePagination.page} /{" "}
+                          {templatePagination.totalPages}
                         </span>
                         <button
                           type="button"
@@ -1224,103 +1249,130 @@ export function ViewCampaignModal({
                           Delete file
                         </button>
                       </div>
-
-                      <div className={`mt-8 rounded-3xl border p-4 shadow-sm ${isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"}`}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h4 className="text-lg font-semibold">Media Upload</h4>
-                            <p className={`mt-2 text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                              Upload an image, video, or document for the campaign.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-4 space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700">
-                              Media file
-                            </label>
-                            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-                              <label
-                                htmlFor="media-upload"
-                                className={`inline-flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+                      {showMediaUpload && (
+                        <div
+                          className={`mt-8 rounded-3xl border p-4 shadow-sm ${isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"}`}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <h4 className="text-lg font-semibold">
+                                Media Upload
+                              </h4>
+                              <p
+                                className={`mt-2 text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
                               >
-                                Choose file
+                                Upload an image, video, or document for the
+                                campaign.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-4 space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700">
+                                Media file
                               </label>
-                              <div className={`min-w-0 flex-1 rounded-2xl border px-4 py-3 text-sm ${isDark ? "border-slate-700 bg-slate-950 text-slate-200" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
-                                {mediaFile ? mediaFile.name : mediaUploadInfo?.fileName || "No file selected."}
+                              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <label
+                                  htmlFor="media-upload"
+                                  className={`inline-flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+                                >
+                                  Choose file
+                                </label>
+                                <div
+                                  className={`min-w-0 flex-1 rounded-2xl border px-4 py-3 text-sm ${isDark ? "border-slate-700 bg-slate-950 text-slate-200" : "border-slate-200 bg-slate-50 text-slate-700"}`}
+                                >
+                                  {mediaFile
+                                    ? mediaFile.name
+                                    : mediaUploadInfo?.fileName ||
+                                      "No file selected."}
+                                </div>
                               </div>
+                              <input
+                                id="media-upload"
+                                ref={mediaInputRef}
+                                type="file"
+                                accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] ?? null;
+                                  setMediaFile(file);
+                                  setMediaError("");
+                                  setMediaMessage("");
+                                }}
+                              />
                             </div>
-                            <input
-                              id="media-upload"
-                              ref={mediaInputRef}
-                              type="file"
-                              accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] ?? null;
-                                setMediaFile(file);
-                                setMediaError("");
-                                setMediaMessage("");
-                              }}
-                            />
-                          </div>
-                          {mediaError && (
-                            <p className="text-sm text-red-500">{mediaError}</p>
-                          )}
-                          {mediaMessage && (
-                            <p className="text-sm text-emerald-600">{mediaMessage}</p>
-                          )}
+                            {mediaError && (
+                              <p className="text-sm text-red-500">
+                                {mediaError}
+                              </p>
+                            )}
+                            {mediaMessage && (
+                              <p className="text-sm text-emerald-600">
+                                {mediaMessage}
+                              </p>
+                            )}
 
-                          <div className="flex flex-wrap items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={handleMediaUpload}
-                              disabled={mediaLoading || !mediaFile}
-                              className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {mediaLoading ? "Uploading..." : "Upload media"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleDeleteMedia}
-                              disabled={mediaLoading || !mediaUploadInfo}
-                              className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              Delete media
-                            </button>
-                          </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={handleMediaUpload}
+                                disabled={mediaLoading || !mediaFile}
+                                className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {mediaLoading ? "Uploading..." : "Upload media"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleDeleteMedia}
+                                disabled={mediaLoading || !mediaUploadInfo}
+                                className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Delete media
+                              </button>
+                            </div>
 
-                          {mediaUploadInfo?.url && (
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                              <p className="font-semibold">Uploaded media preview</p>
-                              <div className="mt-3 space-y-3">
-                                {mediaUploadInfo.mediaType?.startsWith("image/") ? (
-                                  <img
-                                    src={mediaUploadInfo.url}
-                                    alt={mediaUploadInfo.fileName || "Uploaded media"}
-                                    className="max-h-48 w-full rounded-2xl object-contain"
-                                  />
-                                ) : mediaUploadInfo.mediaType?.startsWith("video/") ? (
-                                  <video
-                                    src={mediaUploadInfo.url}
-                                    controls
-                                    className="max-h-48 w-full rounded-2xl bg-black"
-                                  />
-                                ) : (
-                                  <a
-                                    href={mediaUploadInfo.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-sm font-medium text-sky-600 hover:underline"
-                                  >
-                                    {mediaUploadInfo.fileName || "View uploaded media"}
-                                  </a>
-                                )}
+                            {mediaUploadInfo?.url && (
+                              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                                <p className="font-semibold">
+                                  Uploaded media preview
+                                </p>
+                                <div className="mt-3 space-y-3">
+                                  {mediaUploadInfo.mediaType?.startsWith(
+                                    "image/",
+                                  ) ? (
+                                    <img
+                                      src={mediaUploadInfo.url}
+                                      alt={
+                                        mediaUploadInfo.fileName ||
+                                        "Uploaded media"
+                                      }
+                                      className="max-h-48 w-full rounded-2xl object-contain"
+                                    />
+                                  ) : mediaUploadInfo.mediaType?.startsWith(
+                                      "video/",
+                                    ) ? (
+                                    <video
+                                      src={mediaUploadInfo.url}
+                                      controls
+                                      className="max-h-48 w-full rounded-2xl bg-black"
+                                    />
+                                  ) : (
+                                    <a
+                                      href={mediaUploadInfo.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-sm font-medium text-sky-600 hover:underline"
+                                    >
+                                      {mediaUploadInfo.fileName ||
+                                        "View uploaded media"}
+                                    </a>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
@@ -1564,27 +1616,38 @@ shadow-[0_-10px_30px_rgba(0,0,0,0.05)] flex items-center justify-between rounded
     `}
                 >
                   <div className="mb-4">
-                    <h4 className="font-semibold">📅 Schedule Campaign</h4>
+                    <h4 className="font-semibold">Schedule Campaign</h4>
 
                     <p className="mt-1 text-sm text-slate-500">
                       Choose when messages should be delivered.
                     </p>
                   </div>
 
-                  <input
-                    type="datetime-local"
-                    value={scheduleAt}
-                    onChange={(e) => {
-                      setScheduleAt(e.target.value);
-                      setLaunchError("");
-                    }}
-                    className={`
-        w-full rounded-2xl border px-4 py-3 text-sm outline-none
-        ${
-          isDark ? "border-slate-700 bg-slate-950" : "border-slate-300 bg-white"
-        }
-      `}
-                  />
+                  
+
+<DatePicker
+  selected={scheduleAt ? new Date(scheduleAt) : null}
+  onChange={(date:Date | null) => {
+    if (date) {
+      setScheduleAt(date.toISOString());
+      setLaunchError("");
+    }
+  }}
+  minDate={new Date()}
+  showTimeSelect
+  timeIntervals={15}
+  dateFormat="dd MMM yyyy, h:mm aa"
+  placeholderText="Select date & time"
+  className={`
+    w-full rounded-2xl border px-4 py-3 text-sm outline-none
+    transition-all duration-200
+    ${
+      isDark
+        ? "border-slate-700 bg-slate-950 text-white focus:border-emerald-500"
+        : "border-slate-300 bg-white focus:border-emerald-500"
+    }
+  `}
+/>
 
                   <button
                     onClick={() => {

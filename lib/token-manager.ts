@@ -96,7 +96,7 @@ export const refreshAccessToken =
 
       const response =
         await axios.post(
-          "http://localhost:5000/auth/v1/token",
+          "https://apiwhatsapp.blackstoneinfomaticstech.com/auth/v1/token",
           {
             refreshToken,
             deviceId,

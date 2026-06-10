@@ -130,13 +130,13 @@ export default function DashboardClient() {
                   }
                 }}
                 className={
-                  `inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-300 whitespace-nowrap ` +
+                  `inline-flex items-center cursor-pointer gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-300 whitespace-nowrap ` +
                   (isDark
                     ? "border-slate-700 bg-slate-800/80 text-slate-100 hover:bg-slate-700"
                     : "border-slate-300 bg-white text-slate-950 hover:bg-slate-100")
                 }
               >
-                <span className="inline-flex h-4 w-4 items-center justify-center">
+                <span className="inline-flex items-center justify-center">
                   {isDark ? (
                     <svg
                       viewBox="0 0 24 24"

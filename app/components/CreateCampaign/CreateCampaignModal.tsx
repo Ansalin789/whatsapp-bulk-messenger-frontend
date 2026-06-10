@@ -44,7 +44,7 @@ export function CreateCampaignModal({
     };
 
     try {
-      const response = await fetch("http://localhost:5000/campaign/v1/create", {
+      const response = await fetch("https://apiwhatsapp.blackstoneinfomaticstech.com/campaign/v1/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

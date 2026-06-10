@@ -24,3 +24,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.react-datepicker {
+  border-radius: 20px;
+  border: none;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+
+.react-datepicker__header {
+  background: #10b981;
+  color: white;
+  border: none;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: white;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__time-list-item--selected {
+  background: #10b981 !important;
+  border-radius: 10px;
+}
+
+.react-datepicker__day:hover,
+.react-datepicker__time-list-item:hover {
+  border-radius: 10px;
+}

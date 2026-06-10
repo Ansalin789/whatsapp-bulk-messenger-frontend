@@ -15,7 +15,7 @@ import {
 } from "../utils/authStorage";
 import { getDeviceId } from "@/utils/devideId";
 
-const API_URL = "http://localhost:5000/auth/v1/login";
+const API_URL = "https://apiwhatsapp.blackstoneinfomaticstech.com/auth/v1/login";
 
 export interface LoginResponse {
   message: string;
@@ -113,7 +113,7 @@ if (data.userId) {
     return {
       success: false,
       error: errorMsg.includes("Failed to fetch")
-        ? "Cannot connect to server at http://localhost:5000. Is the backend running?"
+        ? "Cannot connect to server at https://apiwhatsapp.blackstoneinfomaticstech.com. Is the backend running?"
         : errorMsg,
     };
   }
@@ -126,7 +126,7 @@ if (data.userId) {
 //   }
 
 //   try {
-//     const response = await fetch("http://localhost:5000/auth/v1/refresh", {
+//     const response = await fetch("https://apiwhatsapp.blackstoneinfomaticstech.com/auth/v1/refresh", {
 //       method: "POST",
 //       headers: {
 //         "Content-Type": "application/json",

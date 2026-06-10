@@ -109,7 +109,7 @@ export function DashboardSidebar({
                   onClick={() => setActiveSection(item.key)}
                   className={`group cursor-pointer relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-5 py-4 text-left transition-all duration-300 ${
                     active
-                      ? "bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-xl shadow-sky-500/20"
+                      ? "bg-gradient-to-r from-[#075E54] via-[#128C7E] to-[#25D366] text-white shadow-xl shadow-sky-500/20"
                       : isDark
                         ? "border border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-700 hover:bg-slate-800/80"
                         : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"

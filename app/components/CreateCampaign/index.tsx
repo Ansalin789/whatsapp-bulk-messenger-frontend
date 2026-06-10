@@ -48,7 +48,7 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
     ).toString();
 
     try {
-      const response = await fetch(`http://localhost:5000/campaign/v1/getall?${queryParams}`, {
+      const response = await fetch(`https://apiwhatsapp.blackstoneinfomaticstech.com/campaign/v1/getall?${queryParams}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -120,7 +120,13 @@ export function CreateCampaign({ isDark }: CreateCampaignProps) {
         </div>
         <button
           onClick={openModal}
-          className="relative inline-flex items-center cursor-pointer gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-[1.03] hover:shadow-indigo-500/35 hover:brightness-110 active:scale-95 whitespace-nowrap"
+          className={`relative inline-flex items-center cursor-pointer gap-2 overflow-hidden rounded-2xl  px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-[1.03] hover:shadow-indigo-500/35 hover:brightness-110 active:scale-95 whitespace-nowrap     ${
+      isDark
+        ? "bg-gradient-to-r from-[#075E54] via-[#128C7E] to-[#25D366]"
+        : "bg-gradient-to-r from-[#128C7E] via-[#25D366] to-[#4ADE80]"
+    }
+    shadow-2xl
+  `}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

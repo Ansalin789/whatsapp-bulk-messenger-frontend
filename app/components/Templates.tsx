@@ -209,7 +209,7 @@ export function Templates({ isDark }: TemplatesProps) {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
+        `https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/getall?page=${pagination.page}&limit=${pagination.limit}&${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -335,7 +335,7 @@ export function Templates({ isDark }: TemplatesProps) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/templatemedia/v1/upload",
+        "https://apiwhatsapp.blackstoneinfomaticstech.com/templatemedia/v1/upload",
         {
           method: "POST",
           headers: {
@@ -802,7 +802,7 @@ export function Templates({ isDark }: TemplatesProps) {
     try {
       console.log("handleSave sending create request", { payload });
       const response = await fetch(
-        "http://localhost:5000/templates/v1/create",
+        "https://apiwhatsapp.blackstoneinfomaticstech.com/templates/v1/create",
         {
           method: "POST",
           headers: {
@@ -890,7 +890,6 @@ export function Templates({ isDark }: TemplatesProps) {
 
   return (
     <div className="space-y-6">
-      {/* TOP SECTION */}
 
       <section className={`rounded-4xl p-6 border ${sectionStyle}`}>
         <div className="flex flex-col xl:flex-row gap-4 mb-6">
