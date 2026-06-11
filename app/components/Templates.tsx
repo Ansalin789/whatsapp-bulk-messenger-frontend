@@ -892,7 +892,7 @@ export function Templates({ isDark }: TemplatesProps) {
     <div className="space-y-6">
 
       <section className={`rounded-4xl p-6 border ${sectionStyle}`}>
-        <div className="flex flex-col xl:flex-row gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:items-center mb-6">
           {/* SEARCH */}
 
           <div className="flex-1">
@@ -965,7 +965,7 @@ export function Templates({ isDark }: TemplatesProps) {
     border border-slate-200
     text-slate-800
     cursor-pointer
-    px-5 py-3
+    px-4 py-2
     rounded-2xl
     font-semibold
     hover:shadow-sm
@@ -976,8 +976,8 @@ export function Templates({ isDark }: TemplatesProps) {
             <span
               className="
     flex items-center justify-center
-    h-8 w-8
-    rounded-xl
+    h-7 w-7
+    rounded-lg
     bg-white
     text-[#25D366]
     shadow-sm
@@ -1199,16 +1199,11 @@ export function Templates({ isDark }: TemplatesProps) {
 
       {viewOpen && selectedTemplate && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-5">
-          <div className="relative w-full max-w-md">
-            <button
-              onClick={() => setViewOpen(false)}
-              className="absolute cursor-pointer -top-5 right-0 text-white text-3xl"
-            >
-              ×
-            </button>
+          <div className="relative w-full max-w-md mt-4">
 
             <div className="p-3 shadow-2xl">
-              <div className="flex h-162.5 flex-col overflow-hidden rounded-4xl bg-[#e5ddd5] p-4">
+              
+              <div className="flex h-162.5 flex-col overflow-hidden rounded-2xl bg-[#e5ddd5] p-4">
                 {" "}
                 <div className="absolute inset-0 opacity-5 bg-[url('https://i.imgur.com/7yUvePI.png')]" />
                 <div className="relative z-10 flex flex-col h-full">
@@ -1237,7 +1232,7 @@ export function Templates({ isDark }: TemplatesProps) {
 
                     {/* RIGHT ICONS */}
 
-                    <div className="flex items-center gap-5 text-[#54656f]">
+                    <div className="flex items-center p-2 gap-5 text-[#54656f]">
                       {/* VIDEO */}
 
                       <svg
@@ -1282,6 +1277,12 @@ export function Templates({ isDark }: TemplatesProps) {
                         <circle cx="12" cy="19" r="1.8" />
                       </svg>
                     </div>
+                    <button
+              onClick={() => setViewOpen(false)}
+              className="absolute cursor-pointer -top-5 right-0 text-black text-3xl"
+            >
+              ×
+            </button>
                   </div>
 
                   {/* MESSAGE */}
@@ -1289,7 +1290,7 @@ export function Templates({ isDark }: TemplatesProps) {
                   {/* MESSAGE PREVIEW */}
                   <div className="flex-1 overflow-y-auto scrollbar-none pt-4">
                     <div className="flex justify-center">
-                      <div className="w-full max-w-[320px] -ml-16 bg-white rounded-2xl overflow-hidden shadow-md">
+                      <div className="w-full max-w-[370px] bg-white rounded-2xl overflow-hidden shadow-md">
                         {/* TEMPLATE IMAGE */}
                         {isMediaTemplate && (
                           <div className="relative h-55 w-full bg-gray-200">
@@ -1431,7 +1432,7 @@ export function Templates({ isDark }: TemplatesProps) {
       {/* POPUP */}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
           <div
             className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
             onClick={() => setOpen(false)}
@@ -1444,18 +1445,18 @@ export function Templates({ isDark }: TemplatesProps) {
               <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
               <div className="absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
 
-              <div className="relative flex items-start justify-between gap-6">
+              <div className="z-999 relative flex items-start justify-between gap-6">
                 <div className="max-w-3xl space-y-4 text-white">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur-sm">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.1em] backdrop-blur-sm">
                     <Sparkles className="h-4 w-4" />
                     WhatsApp Template Builder
                   </div>
 
                   <div>
-                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                    <h2 className="text-2xl font-bold tracking-tight sm:text-2xl">
                       Create Template
                     </h2>
-                    <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
+                    <p className="mt-2 mb-4 max-w-2xl text-xs text-white/85 sm:text-sm">
                       Build a reusable message template with structured header,
                       body, footer, and quick-reply actions that match the
                       dashboard’s WhatsApp-first style.
@@ -1494,12 +1495,12 @@ export function Templates({ isDark }: TemplatesProps) {
                   className={`rounded-[1.75rem] border p-5 shadow-sm ${isDark ? "border-slate-700/80 bg-slate-950/60" : "border-slate-200 bg-white"}`}
                 >
                   <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-2xl bg-[#25D366]/10 p-3 text-[#25D366]">
-                      <Hash className="h-5 w-5" />
+                    <div className="rounded-2xl bg-[#25D366]/10 p-2 text-[#25D366]">
+                      <Hash className="h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">Template Basics</h3>
-                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      <h3 className="text-md font-semibold">Template Basics</h3>
+                      <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Name it, classify it, and define the parameter format.
                       </p>
                     </div>
@@ -1512,7 +1513,7 @@ export function Templates({ isDark }: TemplatesProps) {
                       value={tenantId}
                       disabled
                       readOnly
-                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle} cursor-not-allowed opacity-90`}
+                      className={`w-full rounded-2xl border px-4 py-2 ${inputStyle} cursor-not-allowed opacity-90`}
                     />
 
                     <input
@@ -1528,7 +1529,7 @@ export function Templates({ isDark }: TemplatesProps) {
                       }}
                       pattern="[a-z0-9_]+"
                       title="Use lowercase letters, numbers, and underscores only"
-                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      className={`w-full rounded-2xl border px-4 py-2 ${inputStyle}`}
                     />
                     {templateNameError && (
                       <p className="flex items-center gap-2 text-sm text-rose-500">
@@ -1541,7 +1542,7 @@ export function Templates({ isDark }: TemplatesProps) {
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                        className={`w-full text-xs rounded-2xl border px-4 py-2 ${inputStyle}`}
                       >
                         <option value="UTILITY">UTILITY</option>
                         <option value="MARKETING">MARKETING</option>
@@ -1555,7 +1556,7 @@ export function Templates({ isDark }: TemplatesProps) {
                             e.target.value as "POSITIONAL" | "NAMED",
                           )
                         }
-                        className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                        className={`w-full text-xs rounded-2xl border px-4 py-3 ${inputStyle}`}
                       >
                         <option value="POSITIONAL">POSITIONAL</option>
                         <option value="NAMED">NAMED</option>
@@ -1578,7 +1579,7 @@ export function Templates({ isDark }: TemplatesProps) {
                           <div className="mb-1 text-xs uppercase tracking-[0.2em] opacity-70">
                             Simple
                           </div>
-                          <div>Without Variables</div>
+                          <div className="text-xs">Without Variables</div>
                         </button>
 
                         <button
@@ -1594,7 +1595,7 @@ export function Templates({ isDark }: TemplatesProps) {
                           <div className="mb-1 text-xs uppercase tracking-[0.2em] opacity-70">
                             Dynamic
                           </div>
-                          <div>With Variables</div>
+                          <div className="text-xs">With Variables</div>
                         </button>
                       </div>
                       {variableMode === "WITH_VARIABLES" && (
@@ -1615,7 +1616,7 @@ export function Templates({ isDark }: TemplatesProps) {
                         <select
                           value={languageOption}
                           onChange={(e) => setLanguageOption(e.target.value)}
-                          className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                          className={`w-full text-xs rounded-2xl border px-4 py-3 ${inputStyle}`}
                         >
                           <option value="en_US">en_US</option>
                           <option value="hi_IN">hi_IN</option>
@@ -1632,7 +1633,7 @@ export function Templates({ isDark }: TemplatesProps) {
                               setLanguages([...languages, languageOption]);
                             }
                           }}
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#25D366]/20 transition hover:brightness-110"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-xs font-semibold text-white shadow-lg shadow-[#25D366]/20 transition hover:brightness-110"
                         >
                           <Plus className="h-4 w-4" />
                           Add
@@ -1643,7 +1644,7 @@ export function Templates({ isDark }: TemplatesProps) {
                         {languages.map((lang) => (
                           <span
                             key={lang}
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm ${isDark ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-700"}`}
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${isDark ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-700"}`}
                           >
                             {lang}
                             <button
@@ -1680,8 +1681,8 @@ export function Templates({ isDark }: TemplatesProps) {
                       <MessageSquareText className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">Message Content</h3>
-                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      <h3 className="text-md font-semibold">Message Content</h3>
+                      <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Define the header, body, footer, and buttons that show
                         in the final template.
                       </p>
@@ -1698,7 +1699,7 @@ export function Templates({ isDark }: TemplatesProps) {
                         setMediaPreviewUrl("");
                         setMediaError(null);
                       }}
-                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      className={`w-full rounded-2xl text-xs border px-4 py-2 ${inputStyle}`}
                     >
                       <option value="">Select Header Type</option>
                       <option value="TEXT">TEXT</option>
@@ -1713,7 +1714,7 @@ export function Templates({ isDark }: TemplatesProps) {
                         placeholder="Header"
                         value={header}
                         onChange={(e) => setHeader(e.target.value)}
-                        className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                        className={`w-full rounded-2xl text-xs border px-4 py-3 ${inputStyle}`}
                       />
                     )}
 
@@ -1765,7 +1766,7 @@ export function Templates({ isDark }: TemplatesProps) {
                       placeholder="Body"
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
-                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      className={`w-full text-xs rounded-2xl border px-4 py-3 ${inputStyle}`}
                     />
 
                     {showNoVariableWarning && (
@@ -1810,7 +1811,7 @@ export function Templates({ isDark }: TemplatesProps) {
                       placeholder="Footer"
                       value={footer}
                       onChange={(e) => setFooter(e.target.value)}
-                      className={`w-full rounded-2xl border px-4 py-3 ${inputStyle}`}
+                      className={`w-full text-xs rounded-2xl border px-4 py-3 ${inputStyle}`}
                     />
 
                     <div className={`space-y-3 rounded-2xl border p-4 ${isDark ? "border-slate-700 bg-slate-900/70" : "border-slate-200 bg-slate-50"}`}>
@@ -1825,7 +1826,7 @@ export function Templates({ isDark }: TemplatesProps) {
                         <button
                           type="button"
                           onClick={() => setButtons([...buttons, ""])}
-                          className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
+                          className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-600"
                         >
                           <Plus className="h-4 w-4" />
                           Add button
@@ -1857,8 +1858,8 @@ export function Templates({ isDark }: TemplatesProps) {
                 <div className={`rounded-[1.75rem] border p-5 shadow-sm ${isDark ? "border-slate-700/80 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
-                      <h3 className="text-lg font-semibold">Ready to submit</h3>
-                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      <h3 className="text-md font-semibold">Ready to submit</h3>
+                      <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Review the preview panel before saving the template.
                       </p>
                     </div>
@@ -1888,10 +1889,10 @@ export function Templates({ isDark }: TemplatesProps) {
                 <div className={`rounded-4xl border p-4 shadow-xl ${isDark ? "border-slate-700/80 bg-slate-950/70" : "border-slate-200 bg-slate-100"}`}>
                   <div className="mb-4 flex items-center justify-between gap-3 px-2 pt-1">
                     <div>
-                      <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      <p className={`text-xs font-semibold  tracking-[0.1em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Live Preview
                       </p>
-                      <h3 className="mt-1 text-lg font-semibold">WhatsApp message</h3>
+                      <h3 className="mt-1 text-md font-semibold">WhatsApp message</h3>
                     </div>
 
                     <span className="rounded-full bg-[#25D366]/10 px-3 py-1 text-xs font-semibold text-[#128C7E]">
@@ -1904,10 +1905,10 @@ export function Templates({ isDark }: TemplatesProps) {
                       <div className="bg-[#075E54] px-4 py-4 text-white">
                         <div className="flex items-center justify-between gap-4">
                           <div>
-                            <h4 className="text-sm font-semibold">
+                            <h4 className="text-xs font-semibold">
                               {templateName || "New Template"}
                             </h4>
-                            <p className="mt-1 text-xs text-white/80">
+                            <p className="mt-1 text-[11px] text-white/80">
                               {category} • {languages.join(", ")}
                             </p>
                           </div>

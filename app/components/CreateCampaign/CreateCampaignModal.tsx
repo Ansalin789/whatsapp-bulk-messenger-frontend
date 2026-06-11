@@ -191,23 +191,6 @@ export function CreateCampaignModal({
             </div>
           </div>
 
-          <div
-            className={`
-    rounded-2xl
-    border
-    p-4
-    ${isDark ? "border-[#2A3942] bg-[#111B21]" : "border-slate-200 bg-slate-50"}
-  `}
-          >
-            <p className="mb-2 text-xs font-semibold text-[#25D366]">
-              CAMPAIGN PREVIEW
-            </p>
-
-            <div className="rounded-2xl bg-[#DCF8C6] p-3 text-black">
-              {description || "Your WhatsApp message preview will appear here"}
-            </div>
-          </div>
-
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-500/10">
             <button
               type="button"

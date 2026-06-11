@@ -138,7 +138,7 @@ export default function DashboardClient() {
         />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pt-14 lg:ml-64">
+        <main className="flex-1 overflow-y-auto pt-10">
 
 
           <div className="mx-auto max-w-6xl px-8 py-8">
@@ -213,7 +213,7 @@ export default function DashboardClient() {
                   </div>
                 </div>
               </header>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => {
                   const nextTheme = isDark ? "light" : "dark";
@@ -264,7 +264,7 @@ export default function DashboardClient() {
                     </svg>
                   )}
                 </span>
-              </button>
+              </button> */}
             </div>
 
             {/* Campaigns Section */}
