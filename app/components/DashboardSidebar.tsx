@@ -9,7 +9,12 @@ interface DashboardSidebarProps {
   activeSection: "campaigns" | "history" | "templates";
   setActiveSection: (section: "campaigns" | "history" | "templates") => void;
   isDark: boolean;
+
+  // Mobile drawer support
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
+
 
 type SidebarItem = {
   key: DashboardSidebarProps["activeSection"];
@@ -21,8 +26,11 @@ export function DashboardSidebar({
   activeSection,
   setActiveSection,
   isDark,
+  isMobileOpen = false,
+  onMobileClose,
 }: DashboardSidebarProps) {
   const router = useRouter();
+
   const navItems: SidebarItem[] = [
     {
       key: "campaigns",
@@ -58,20 +66,32 @@ export function DashboardSidebar({
     },
   ];
 
-  const handleLogout = () => {
+const handleLogout = () => {
     authLogout();
     router.replace("/");
   };
 
-  return (
-    <aside
-      className={
-        "fixed left-0 top-0 h-screen w-[250px] border-r p-6 overflow-y-auto " +
-        (isDark
-          ? "border-slate-800/70 bg-slate-900/80"
-          : "border-slate-200/70 bg-white/90")
-      }
-    >
+return (
+    <>
+      {/* Backdrop for mobile */}
+      <div
+        className={
+          "fixed inset-0 z-[60] bg-black/50 transition-opacity lg:hidden " +
+          (isMobileOpen ? "opacity-100" : "pointer-events-none opacity-0")
+        }
+        onClick={() => onMobileClose?.()}
+      />
+
+      <aside
+        className={
+          "fixed left-0 top-0 z-[70] h-screen w-[250px] border-r p-6 overflow-y-auto transition-transform " +
+          (isMobileOpen ? "translate-x-0" : "-translate-x-full") +
+          " lg:translate-x-0 lg:static lg:block lg:fixed " +
+          (isDark
+            ? "border-slate-800/70 bg-slate-900/80"
+            : "border-slate-200/70 bg-white/90")
+        }
+      >
       <div className="flex h-full flex-col justify-between">
         {/* Top Section */}
         <div className="space-y-6">
@@ -104,9 +124,13 @@ export function DashboardSidebar({
               const active = activeSection === item.key;
 
               return (
-                <button
+<button
                   key={item.key}
-                  onClick={() => setActiveSection(item.key)}
+                  onClick={() => {
+                    setActiveSection(item.key);
+                    onMobileClose?.();
+                  }}
+
                   className={`group cursor-pointer relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-5 py-4 text-left transition-all duration-300 ${
                     active
                       ? "bg-gradient-to-r from-[#075E54] via-[#128C7E] to-[#25D366] text-white shadow-xl shadow-sky-500/20"
@@ -207,5 +231,6 @@ export function DashboardSidebar({
         </div>
       </div>
     </aside>
+    </>
   );
 }
