@@ -97,7 +97,7 @@ export function CreateCampaignModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 transition-all duration-300">
       <div
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300"
         onClick={() => {
